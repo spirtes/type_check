@@ -2,7 +2,7 @@
 *
 *   Abstract syntax definitions.
 *   
-*   N. Danner
+*   N. Danner  
 *   Fall 2016
 *)
 
