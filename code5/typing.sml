@@ -85,15 +85,23 @@ struct
   (* inferExp env e = e', where e' is the annotated expression
    * corresponding to e given an environment env. 
    *)
-  fun inferExp (env, (*type??*)e: Ast.exp) : AnnAst.exp =
+  fun inferExp (env,(*type??*) e: Ast.exp) : AnnAst.exp =
     case e of
       Ast.EInt(n) => AnnAst.EInt(n)
       | Ast.EDouble(n) => AnnAst.EDouble(n)
       | Ast.EString(s) => AnnAst.EString(s)
       | Ast.ETrue => AnnAst.ETrue(true)
       | Ast.EFalse => AnnAst.EFalse(false)
-      (*| Ast.EId(id) =>  not implemented in AnnAst yet *) 
-      (*| Ast.ECall(id, l) => not implemented in AnnAst yet *)
+      | Ast.EId(id) => (case Environment.find(env, id) of
+                          NONE => raise TypeError
+                          | SOME t => AnnAst.EId(id, t))
+      | Ast.ECall(id, (l)) => (case Environment.find(env, id) of
+                              NONE => raise TypeError
+                              | SOME t => (*AnnAst.ECall(inferExp(id), 
+                                          (map (fn x => inferExp(x)) (l) ))
+                                          need to do some lookups or something??*)
+                                          raise TypeError
+                              )
       (*| Ast.EPostIncr(id) => not implemented in AnnAst yet *)
       (*| Ast.EPostDecr(id) => not implemented in AnnAst yet *)
       (*| Ast.ENot(n) => not implemented in AnnAst yet *)

@@ -16,6 +16,8 @@ struct
                  Tdouble | Tstring |
                  Tvoid
 
+  type id = string 
+
   (*  The annotated type of expressions.  I have provided a couple of 
   *   clauses for you, but you need to supply the rest.
   *)
@@ -25,6 +27,8 @@ struct
                | EString of string
                | ETrue of bool
                | EFalse of bool
+               | EId of id*typ
+               | ECall of exp*(exp list)
                | EAdd of (exp*exp)*typ 
                              (*  Needs a type parameter, because a +
                                  expression could have more than one type. *)
