@@ -98,6 +98,143 @@ struct
       | Ast.ERShift(n1, n2)) => mustInt(env, n1, n2, opr)
       | _ => raise TypeError
 
+    fun eqNeqChecker (e1: Ast.exp, e2: Ast.exp, opr: string) : AnnAst.exp =
+        case e2 of
+          Ast.EInt(n) => (case e1 of
+                            Ast.EInt(n') => 
+                              (case opr of
+                                "eeq" => AnnAst.EEq((AnnAst.EInt(n),
+                                                     AnnAst.EInt(n')),
+                                                     AnnAst.Tbool)
+                                |"neq" => AnnAst.ENeq((AnnAst.EInt(n),
+                                                      AnnAst.EInt(n')),
+                                                      AnnAst.Tbool)
+                              )
+                              | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+                              | _ => raise TypeError
+                           )
+        | Ast.EDouble(n) => (case e1 of
+                              Ast.EDouble(n') => 
+                                (case opr of
+                                   "eeq" => AnnAst.EEq((AnnAst.EDouble(n),
+                                                   AnnAst.EDouble(n')),
+                                                   AnnAst.Tbool)
+                                  |"neq" => AnnAst.ENeq((AnnAst.EDouble(n),
+                                                    AnnAst.EDouble(n')),
+                                                    AnnAst.Tbool)
+                            )
+                            | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+                            | _ => raise TypeError
+                          )
+        | Ast.EString(s) => (case e1 of
+                          Ast.EString(s') => 
+                            (case opr of
+                              "eeq" => AnnAst.EEq((AnnAst.EString(s),
+                                                   AnnAst.EString(s')),
+                                                   AnnAst.Tbool)
+                              |"neq" => AnnAst.ENeq((AnnAst.EString(s),
+                                                    AnnAst.EString(s')),
+                                                    AnnAst.Tbool)
+                            )
+                            | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+                            | _ => raise TypeError
+                          )
+        | Ast.ETrue => (case e1 of
+                          Ast.ETrue => 
+                            (case opr of
+                              "eeq" => AnnAst.EEq((AnnAst.ETrue(true),
+                                                   AnnAst.ETrue(true)),
+                                                   AnnAst.Tbool)
+                              |"neq" => AnnAst.ENeq((AnnAst.ETrue(true),
+                                                    AnnAst.ETrue(true)),
+                                                    AnnAst.Tbool)
+                            )
+                            | Ast.EFalse =>
+                              (case opr of
+                                "eeq" => AnnAst.EEq((AnnAst.ETrue(true),
+                                                     AnnAst.EFalse(false)),
+                                                     AnnAst.Tbool)
+                                | "neq" => AnnAst.ENeq((AnnAst.ETrue(true),
+                                                     AnnAst.EFalse(false)),
+                                                     AnnAst.Tbool)
+                                )
+                            | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+                            | _ => raise TypeError
+                          )
+        | Ast.EFalse => (case e1 of
+                          Ast.EFalse => 
+                            (case opr of
+                              "eeq" => AnnAst.EEq((AnnAst.EFalse(false),
+                                                   AnnAst.EFalse(false)),
+                                                   AnnAst.Tbool)
+                              |"neq" => AnnAst.ENeq((AnnAst.EFalse(false),
+                                                    AnnAst.EFalse(false)),
+                                                    AnnAst.Tbool)
+                            )
+                            | Ast.ETrue =>
+                              (case opr of
+                                "eeq" => AnnAst.EEq((AnnAst.EFalse(false),
+                                                     AnnAst.ETrue(true)),
+                                                     AnnAst.Tbool)
+                                | "neq" => AnnAst.ENeq((AnnAst.EFalse(false),
+                                                     AnnAst.ETrue(true)),
+                                                     AnnAst.Tbool)
+                              )
+                            | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+                            | _ => raise TypeError
+                          )
+        | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                                | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                                | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                                | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                                | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                                | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                                | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                                | Ast.EOr(n1,n2)) => 
+                                    eqNeqChecker(n1, n2, opr)
+
+
+    (* SOMETHING TO CONSIDER: recursive call is DEF wrong DEF DEF DEF cuz opr can change*)
     fun boolChecker (env (* type?? *), e1: Ast.exp, e2: Ast.exp, opr: string) : AnnAst.exp =
       case e2 of
         Ast.ETrue => (case e1 of
@@ -106,6 +243,7 @@ struct
                                   "eeq" => AnnAst.EEq((AnnAst.ETrue(true),
                                                        AnnAst.ETrue(true)), 
                                                       AnnAst.Tbool)
+                                  (*SLIGHTLY DIFFERENT ^^ CAN TYPE CHECK AS LONG AS OPS HAVE SAME TYPE*)
                                   | "neq" => AnnAst.ENeq((AnnAst.ETrue(true),
                                                        AnnAst.ETrue(true)), 
                                                       AnnAst.Tbool)
@@ -267,8 +405,8 @@ struct
       | Ast.EGt(e, e') => boolChecker(env, e, e', "gt")
       | Ast.ELe(e, e') => boolChecker(env, e, e', "le")
       | Ast.EGe(e, e') => boolChecker(env, e, e', "ge")
-      | Ast.EEq(e, e') => boolChecker(env, e, e', "eeq")
-      | Ast.ENeq(e, e') => boolChecker(env, e, e', "neq")
+      | Ast.EEq(e, e') => eqNeqChecker(e, e', "eeq")
+      | Ast.ENeq(e, e') => eqNeqChecker(e, e', "neq")
       | Ast.EAnd(e, e') => boolChecker(env, e, e', "and")
       | Ast.EOr(e, e') => (boolChecker(env, e, e', "or")
       (*| Ast.EAsst(id, e) => not implemented in AnnAst yet *)
