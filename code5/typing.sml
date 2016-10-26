@@ -26,7 +26,7 @@ struct
   fun intOrDouble (env (*type??*), e1: Ast.exp, e2: Ast.exp, opr: string) : AnnAst.exp =
     case e2 of (* starting from e2 b/c right associative *)
       Ast.EInt(n) => (case e1 of 
-                          Ast.EInt(n') => (case opr of
+                              Ast.EInt(n') => (case opr of
                                             "plus" => AnnAst.EAdd((AnnAst.EInt(n),
                                                                   AnnAst.EInt(n')),
                                                                   AnnAst.Tint)
@@ -41,9 +41,13 @@ struct
                                                                     AnnAst.Tint)
                                             | _ => raise TypeError
                                             )
-                          | _ => raise TypeError)
+                              | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) 
+                                  | Ast.EMul(n1, n2) | Ast.EDiv(n1, n2) 
+                                  | Ast.EMod(n1, n2) | Ast.ELShift(n1, n2) 
+                                  | Ast.ERShift(n1, n2)) => intOrDouble(env, n1, n2, opr)
+                              | _ => raise TypeError)
       | Ast.EDouble(n) => (case e1 of
-                                Ast.EDouble(n') => (case opr of
+                              Ast.EDouble(n') => (case opr of
                                                       "plus" => AnnAst.EAdd((AnnAst.EDouble(n),
                                                                              AnnAst.EDouble(n')),
                                                                              AnnAst.Tdouble)
@@ -58,10 +62,14 @@ struct
                                                                              AnnAst.Tdouble)
                                                     | _ => raise TypeError
                                                     )
-                                | _ => raise TypeError)
+                              | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) 
+                                  | Ast.EMul(n1, n2) | Ast.EDiv(n1, n2) 
+                                  | Ast.EMod(n1, n2) | Ast.ELShift(n1, n2) 
+                                  | Ast.ERShift(n1, n2)) => intOrDouble(env, n1, n2, opr)
+                              | _ => raise TypeError)
       | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) | Ast.EMul(n1, n2) 
       | Ast.EDiv(n1, n2) | Ast.EMod(n1, n2) | Ast.ELShift(n1, n2) 
-      | Ast.ERShift(n1, n2)) => intOrDouble(env, inferExp env n1, inferExp env n2, opr)
+      | Ast.ERShift(n1, n2)) => intOrDouble(env, n1, n2, opr)
       | _ => raise TypeError
 
   fun mustInt (env (*type??*), e1: Ast.exp, e2: Ast.exp, opr: string) : AnnAst.exp =
@@ -79,11 +87,15 @@ struct
                                                                     AnnAst.Tint)
                                               | _ => raise TypeError
                                               )
+                          | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) 
+                            | Ast.EMul(n1, n2) | Ast.EDiv(n1, n2) 
+                            | Ast.EMod(n1, n2) | Ast.ELShift(n1, n2) 
+                            | Ast.ERShift(n1, n2)) => mustInt(env, n1, n2, opr)
                           | _ => raise TypeError
                         )
       | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) | Ast.EMul(n1, n2) 
       | Ast.EDiv(n1, n2) | Ast.EMod(n1, n2) | Ast.ELShift(n1, n2) 
-      | Ast.ERShift(n1, n2)) => mustInt(env, inferExp env n1, inferExp env n2, opr)
+      | Ast.ERShift(n1, n2)) => mustInt(env, n1, n2, opr)
       | _ => raise TypeError
 
     fun boolChecker (env (* type?? *), e1: Ast.exp, e2: Ast.exp, opr: string) : AnnAst.exp =
@@ -143,6 +155,15 @@ struct
                                                        AnnAst.EFalse(false)), 
                                                       AnnAst.Tbool)
                                 | _ => raise TypeError)
+                          | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                              | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                              | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                              | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                              | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                              | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                              | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                              | Ast.EOr(n1,n2)) => 
+                                boolChecker(env, n1, n2, opr)
                           | _ => raise TypeError
                                     )
         | Ast.EFalse => (case e1 of
@@ -200,19 +221,28 @@ struct
                                                        AnnAst.EFalse(false)), 
                                                       AnnAst.Tbool)
                                 | _ => raise TypeError) 
-                            | _ => raise TypeError
+                            | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+                              | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+                              | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) 
+                              | Ast.ERShift(n1,n2) | Ast.EEq(n1,n2) 
+                              | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) 
+                              | Ast.EGt(n1,n2) | Ast.ELe(n1,n2)
+                              | Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) 
+                              | Ast.EOr(n1,n2)) => 
+                                boolChecker(env, n1, n2, opr)
+                            |_ => raise TypeError
                                     )
-        | (Ast.EDouble _| Ast.EInt _| Ast.EString _) => raise TypeError
         | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)| Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
             | Ast.EMod(n1,n2) | Ast.ELShift(n1,n2) | Ast.ERShift(n1,n2)
             | Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)| Ast.ELt(n1,n2) | Ast.EGt(n1,n2)
             | Ast.ELe(n1,n2)| Ast.EGe(n1,n2)| Ast.EAnd(n1,n2) | Ast.EOr(n1,n2)) => 
-                        boolChecker(env, inferExp env n1, inferExp env n2, opr)
+                        boolChecker(env, n1, n2, opr)
+        |_ => raise TypeError
 
   (* inferExp env e = e', where e' is the annotated expression
    * corresponding to e given an environment env. 
    *)
-  fun inferExp (env (*type??*)) (e: Ast.exp) : AnnAst.exp =
+  fun inferExp (env, (*type??*)e: Ast.exp) : AnnAst.exp =
     case e of
       Ast.EInt(n) => AnnAst.EInt(n)
       | Ast.EDouble(n) => AnnAst.EDouble(n)
