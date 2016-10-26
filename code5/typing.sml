@@ -36,9 +36,21 @@ struct
                                             | "times" => AnnAst.EMul((AnnAst.EInt(n),
                                                                       AnnAst.EInt(n')),
                                                                       AnnAst.Tint)
-                                            | "div" => AnnAst.EDiv((AnnAst.EInt(n),
+                                            | "divide" => AnnAst.EDiv((AnnAst.EInt(n),
                                                                     AnnAst.EInt(n')),
                                                                     AnnAst.Tint)
+                                            | "lt" => AnnAst.ELt((AnnAst.EInt(n),
+                                                                  AnnAst.EInt(n')), 
+                                                                  AnnAst.Tbool)
+                                            | "gt" => AnnAst.EGt((AnnAst.EInt(n),
+                                                                  AnnAst.EInt(n')), 
+                                                                  AnnAst.Tbool)
+                                            | "le" => AnnAst.ELe((AnnAst.EInt(n),
+                                                                  AnnAst.EInt(n')), 
+                                                                  AnnAst.Tbool)
+                                            | "ge" => AnnAst.EGe((AnnAst.EInt(n),
+                                                                  AnnAst.EInt(n')), 
+                                                                  AnnAst.Tbool)
                                             | _ => raise TypeError
                                             )
                               | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) 
@@ -57,9 +69,21 @@ struct
                                                     | "times" => AnnAst.EMul((AnnAst.EDouble(n),
                                                                              AnnAst.EDouble(n')),
                                                                              AnnAst.Tdouble)
-                                                    | "div" => AnnAst.EDiv((AnnAst.EDouble(n),
+                                                    | "divide" => AnnAst.EDiv((AnnAst.EDouble(n),
                                                                              AnnAst.EDouble(n')),
                                                                              AnnAst.Tdouble)
+                                                    | "lt" => AnnAst.ELt((AnnAst.EDouble(n),
+                                                                          AnnAst.EDouble(n')), 
+                                                                            AnnAst.Tbool)
+                                                    | "gt" => AnnAst.EGt((AnnAst.EDouble(n),
+                                                                          AnnAst.EDouble(n')), 
+                                                                          AnnAst.Tbool)
+                                                    | "le" => AnnAst.ELe((AnnAst.EDouble(n),
+                                                                          AnnAst.EDouble(n')), 
+                                                                          AnnAst.Tbool)
+                                                    | "ge" => AnnAst.EGe((AnnAst.EDouble(n),
+                                                                          AnnAst.EDouble(n')), 
+                                                                          AnnAst.Tbool)
                                                     | _ => raise TypeError
                                                     )
                               | (Ast.EAdd(n1,n2) | Ast.ESub(n1, n2) 
@@ -240,26 +264,7 @@ struct
         Ast.ETrue => (case e1 of
                           Ast.ETrue =>
                             (case opr of
-                                  "eeq" => AnnAst.EEq((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  (*SLIGHTLY DIFFERENT ^^ CAN TYPE CHECK AS LONG AS OPS HAVE SAME TYPE*)
-                                  | "neq" => AnnAst.ENeq((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  | "lt" => AnnAst.ELt((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  | "gt" => AnnAst.EGt((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  | "le" => AnnAst.ELe((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  | "ge" => AnnAst.EGe((AnnAst.ETrue(true),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                  | "and" => AnnAst.EConj((AnnAst.ETrue(true),
+                                  "and" => AnnAst.EConj((AnnAst.ETrue(true),
                                                        AnnAst.ETrue(true)), 
                                                       AnnAst.Tbool)
                                   | "or" => AnnAst.EDisj((AnnAst.ETrue(true),
@@ -268,25 +273,7 @@ struct
                                   | _ => raise TypeError)
                           | Ast.EFalse =>
                             (case opr of
-                                "eeq" => AnnAst.EEq((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "neq" => AnnAst.ENeq((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "lt" => AnnAst.ELt((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "gt" => AnnAst.EGt((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "le" => AnnAst.ELe((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "ge" => AnnAst.EGe((AnnAst.ETrue(true),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "and" => AnnAst.EConj((AnnAst.ETrue(true),
+                                "and" => AnnAst.EConj((AnnAst.ETrue(true),
                                                        AnnAst.EFalse(false)), 
                                                       AnnAst.Tbool)
                                 | "or" => AnnAst.EDisj((AnnAst.ETrue(true),
@@ -307,25 +294,7 @@ struct
         | Ast.EFalse => (case e1 of
                               Ast.ETrue =>
                                 (case opr of
-                                  "eeq" => AnnAst.EEq((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "neq" => AnnAst.ENeq((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "lt" => AnnAst.ELt((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "gt" => AnnAst.EGt((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "le" => AnnAst.ELe((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "ge" => AnnAst.EGe((AnnAst.EFalse(false),
-                                                       AnnAst.ETrue(true)), 
-                                                      AnnAst.Tbool)
-                                | "and" => AnnAst.EConj((AnnAst.EFalse(false),
+                                 "and" => AnnAst.EConj((AnnAst.EFalse(false),
                                                        AnnAst.ETrue(true)), 
                                                       AnnAst.Tbool)
                                 | "or" => AnnAst.EDisj((AnnAst.EFalse(false),
@@ -334,25 +303,7 @@ struct
                                 | _ => raise TypeError)
                             | Ast.EFalse =>
                               (case opr of
-                                "eeq" => AnnAst.EEq((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "neq" => AnnAst.ENeq((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "lt" => AnnAst.ELt((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "gt" => AnnAst.EGt((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "le" => AnnAst.ELe((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "ge" => AnnAst.EGe((AnnAst.EFalse(false),
-                                                       AnnAst.EFalse(false)), 
-                                                      AnnAst.Tbool)
-                                | "and" => AnnAst.EConj((AnnAst.EFalse(false),
+                                "and" => AnnAst.EConj((AnnAst.EFalse(false),
                                                        AnnAst.EFalse(false)), 
                                                       AnnAst.Tbool)
                                 | "or" => AnnAst.EDisj((AnnAst.EFalse(false),
@@ -401,10 +352,10 @@ struct
       | Ast.EMod(e, e') => mustInt(env, e, e', "mod")
       | Ast.ELShift(e, e') => mustInt(env, e, e', "lshift")
       | Ast.ERShift(e, e') => mustInt(env, e, e', "rshift")
-      | Ast.ELt(e, e') => boolChecker(env, e, e', "lt")
-      | Ast.EGt(e, e') => boolChecker(env, e, e', "gt")
-      | Ast.ELe(e, e') => boolChecker(env, e, e', "le")
-      | Ast.EGe(e, e') => boolChecker(env, e, e', "ge")
+      | Ast.ELt(e, e') => intOrDouble(env, e, e', "lt")
+      | Ast.EGt(e, e') => intOrDouble(env, e, e', "gt")
+      | Ast.ELe(e, e') => intOrDouble(env, e, e', "le")
+      | Ast.EGe(e, e') => intOrDouble(env, e, e', "ge")
       | Ast.EEq(e, e') => eqNeqChecker(e, e', "eeq")
       | Ast.ENeq(e, e') => eqNeqChecker(e, e', "neq")
       | Ast.EAnd(e, e') => boolChecker(env, e, e', "and")
