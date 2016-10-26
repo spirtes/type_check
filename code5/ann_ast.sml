@@ -37,6 +37,7 @@ struct
                | ELt of (exp*exp)*typ | EGt of (exp*exp)*typ
                | ELe of (exp*exp)*typ | EGe of (exp*exp)*typ
                | EConj of (exp*exp)*typ | EDisj of (exp*exp)*typ
+               | ECond of (exp*exp*exp)*typ
 
   (*  The type of programs.  Replace the PNone constructor with your
   *   definition.
@@ -89,6 +90,11 @@ struct
         | EGe((e0, e1), t) => binToStr("EGe", e0, e1, t)
         | EConj((e0, e1), t) => binToStr("EConj", e0, e1, t)
         | EDisj((e0, e1), t) => binToStr("EDisj", e0, e1, t)
+        | ECond((e0, e1, e2), t) => "ECond(" ^ 
+                                    expToString e0 ^ ", " ^ 
+                                    expToString e1 ^ ", " ^
+                                    expToString e2 ^ ", " ^ 
+                                    typToString t ^ ")"
       end
 
   (*  You must spply a function to convert (annotated) programs to
