@@ -75,6 +75,7 @@ struct
             )
       | (Ast.EAnd(n1,n2) | Ast.EOr(n1,n2)) =>
           typeBool(n1) andalso typeBool(n2)
+      | Ast.ENot(n) => typeBool(n)
       | Ast.ECond(n1,n2,n3) => (typeBool(n1)
           andalso ((typeInt(n2) andalso typeInt(n3)) orelse
                     (typeDouble(n2) andalso typeDouble(n3)) orelse
@@ -82,10 +83,22 @@ struct
                     (typeBool(n2) andalso typeBool(n3))) )
       |_ => false
 
+ (*  fun typeIsolator(e : Ast.exp) : AnnAst.typ =
+      case e of
+        Ast.EInt _ => AnnAst.Tint
+        | Ast.EDouble _ => AnnAst.Tdouble
+        | Ast.EString _ => AnnAst.Tstring
+        | Ast.ETrue => AnnAst.Tbool
+        | Ast.EFalse => AnnAst.Tbool
+        | Ast.EId(id) => case Environment.find(env, id) of
+                          NONE => raise UndeclaredError(id)
+                          | SOME t => t
+        | Ast.ECall *)
+
   (* inferExp env e = e', where e' is the annotated expression
    * corresponding to e given an environment env. 
    *)
-  fun inferExp (env,(*type??*) e: Ast.exp) : AnnAst.exp =
+  and inferExp (env,(*type??*) e: Ast.exp) : AnnAst.exp =
     case e of
       Ast.EInt(n) => AnnAst.EInt(n)
       | Ast.EDouble(n) => AnnAst.EDouble(n)
@@ -93,20 +106,42 @@ struct
       | Ast.ETrue => AnnAst.ETrue(true)
       | Ast.EFalse => AnnAst.EFalse(false)
       | Ast.EId(id) => (case Environment.find(env, id) of
-                          NONE => raise TypeError
+                          NONE => raise UndeclaredError(id)
                           | SOME t => AnnAst.EId(id, t))
       | Ast.ECall(id, (l)) => (case Environment.find(env, id) of
-                              NONE => raise TypeError
+                              NONE => raise UndeclaredError(id)
                               | SOME t => (*AnnAst.ECall(inferExp(id), 
                                           (map (fn x => inferExp(x)) (l) ))
                                           need to do some lookups or something??*)
                                           raise TypeError
                               )
-      (*| Ast.EPostIncr(id) => not implemented in AnnAst yet *)
-      (*| Ast.EPostDecr(id) => not implemented in AnnAst yet *)
-      (*| Ast.ENot(n) => not implemented in AnnAst yet *)
-      (*| Ast.EPreIncr(id) => not implemented in AnnAst yet *)
-      (*| Ast.EPreDecr(id) => not implemented in AnnAst yet *)
+      | Ast.EPostIncr(id) => (case Environment.find(env, id) of 
+                              NONE => raise UndeclaredError(id)
+                              | SOME t => if t = AnnAst.Tint 
+                                          then AnnAst.EPostIncr(id, t)
+                                          else raise TypeError
+                             ) 
+      | Ast.EPostDecr(id) => (case Environment.find(env, id) of
+                              NONE => raise UndeclaredError(id)
+                              | SOME t => if t = AnnAst.Tint
+                                          then AnnAst.EPostDecr(id, t)
+                                          else raise TypeError
+                             )
+      | Ast.ENot(n) => if typeBool(e)
+                        then AnnAst.ENot(inferExp(env, n), AnnAst.Tbool)
+                       else raise TypeError
+      | Ast.EPreIncr(id) => (case Environment.find(env, id) of
+                              NONE => raise UndeclaredError(id)
+                              | SOME t => if t = AnnAst.Tint
+                                          then AnnAst.EPreIncr(id, t)
+                                          else raise TypeError
+                             )
+      | Ast.EPreDecr(id) => (case Environment.find(env, id) of
+                              NONE => raise UndeclaredError(id)
+                              | SOME t => if t = AnnAst.Tint
+                                          then AnnAst.EPreDecr(id, t)
+                                          else raise TypeError
+                             )
       | Ast.EAdd(e0, e1) => if typeInt(e) 
                               then AnnAst.EAdd((inferExp(env, e0), 
                                 inferExp(env, e1)), AnnAst.Tint)
@@ -179,7 +214,13 @@ struct
                             then AnnAst.EDisj((inferExp(env, e0),
                                 inferExp(env, e1)), AnnAst.Tbool)
                             else raise TypeError
-      (*| Ast.EAsst(id, e) => not implemented in AnnAst yet *)
+      | Ast.EAsst(id, e) => case Environment.find(id, env) of
+                              NONE => raise UndeclaredError(id)
+                              | SOME t => let 
+                                            val exptype(n) = inferExp(e)
+                                          in
+                                            if exptype = AnnAst.EInt 
+                                          end
       | Ast.ECond(e0, e1, e2) => if typeBool(e)
                                   then AnnAst.ECond((inferExp(env, e0),
                                     inferExp(env, e1), inferExp(env, e2)),
@@ -196,11 +237,6 @@ struct
   *)
   fun inferExpNoEnv (e : Ast.exp) : AnnAst.exp =
     inferExp(Environment.empty, e)
-     (* case e of
-        EInt e => EInt e
-        | EAdd(e1,e2) => EAdd((inferExpNoEnv e1), (inferExpNoEnv e2), 
-                        change((inferExpNoEnv e1), (inferExpNoEnv e2))) *)
-
 
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.

@@ -28,10 +28,11 @@ struct
                | ETrue of bool
                | EFalse of bool
                | EId of id*typ
-               | ECall of exp*(exp list)
+               | ECall of (id*typ)*(exp list)
+               | EPostIncr of id*typ | EPostDecr of id*typ
+               | EPreIncr of id*typ | EPreDecr of id*typ
+               | ENot of exp*typ
                | EAdd of (exp*exp)*typ 
-                             (*  Needs a type parameter, because a +
-                                 expression could have more than one type. *)
                | ESub of (exp*exp)*typ
                | EMul of (exp*exp)*typ
                | EDiv of (exp*exp)*typ
@@ -41,6 +42,7 @@ struct
                | ELt of (exp*exp)*typ | EGt of (exp*exp)*typ
                | ELe of (exp*exp)*typ | EGe of (exp*exp)*typ
                | EConj of (exp*exp)*typ | EDisj of (exp*exp)*typ
+               | EAsst of id*exp*typ
                | ECond of (exp*exp*exp)*typ
 
   (*  The type of programs.  Replace the PNone constructor with your
