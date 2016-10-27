@@ -240,6 +240,65 @@ struct
   fun inferExpNoEnv (e : Ast.exp) : AnnAst.exp =
     inferExp(emptyEnv, e)
 
+  fun tToT(t : Ast.typ) : AnnAst.typ =
+    case t of
+      Ast.Tbool => AnnAst.Tbool
+      | Ast.Tint => AnnAst.Tint
+      | Ast.Tdouble => AnnAst.Tdouble
+      | Ast.Tstring => AnnAst.Tstring
+      | Ast.Tvoid => AnnAst.Tvoid
+
+  (* checkStmt s = s', where s' is the annotated statement datatype
+   * corresponding to s'
+   *)
+  fun checkStmt (envi : env, s : Ast.stm) : AnnAst.stm = 
+    let
+      val (funcs, cont) = envi
+
+      fun declCheck(idl: Ast.id list) : bool = 
+        let val x = List.hd(cont)
+        in
+          case idl of
+            [] => true
+            | id :: ids => (case Environ.find(x, id) of
+                              NONE => declCheck(ids)
+                              | SOME t => raise MultiplyDeclaredError(id)
+        end
+
+        fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list =
+          case l of
+            [] => []
+            | (id,e) :: xs => id :: tupToSing(xs)
+
+        fun initCheck(idel: (Ast.id*Ast.exp) list, t: AnnAst.typ) : bool =
+          case idel of
+            [] => true
+            | (id,ex) :: xs => 
+    in
+      case s of
+        SExp(e) => AnnAst.SExp(inferExp(envi, e))
+        (* \/ valid if none of the variables have been previously assigned a type 
+                in the current block or function*)
+        (* process: pull the current environment off the stack, see if any ids are
+          there if not you're good if they are you're bad *)
+        | SDecl(t, idl) => if declCheck(idl) then AnnAst.SDecl(tToT(t), idl)
+        (* \/ valid if none of the variables have been previously assigned a type
+        in the current block or function and the type of the expression assigned to the
+        variable is the initialization type *)
+        (* process: pull current environment, see if any ids are there, if so raise error
+          otherwise keep going and make sure all e's have same type as t *)
+        | SInit(t, l) => if declCheck(tupToSing(l)) 
+                          then if initBuild(l, tToT(t)) 
+                            then AnnAst.SInit(tToT(t), l)
+        | SReturn(e) =>
+        | SDowhile(s0, e) =>
+        | SWhile(e, s0) =>
+        | SFor((t,id,e0),e1,e2,s0) =>
+        | SBlock(sl) =>
+        | SIf(e, s0) =>
+        | SIfElse(e, s0, s1) =>
+    end
+
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
