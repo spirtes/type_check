@@ -48,7 +48,21 @@ struct
   (*  The type of programs.  Replace the PNone constructor with your
   *   definition.
   *)
-  datatype program = PNone
+  datatype stm = SExp of exp
+                | SDecl of typ*(id list) (*follows a different form than asst, this ok?*)
+                | SInit of typ*(id*exp list)
+                | SRet of exp (*worth making exp*typ or not since exps have types?*)
+                | SWhile of exp*stm
+                | SFor of (id*exp*typ)*exp*exp*stm (*order of the first trouple? is an assignment*)
+                | SIf of exp*typ*stm (*need typ there since expression needs to be type bool?*)
+                | SIfElse of exp*typ*stm*stm
+                | SBlock of stm list
+
+  datatype def = DFun of id*typ*(id*typ list)*(stm list)
+                | FProt of id*typ*(id*typ list)
+
+  
+  datatype program = PDef of def list
 
   (*  typToString t = a string representation of t.
   *)
