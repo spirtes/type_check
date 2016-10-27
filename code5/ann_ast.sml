@@ -55,8 +55,8 @@ struct
                 | SRet of exp (*worth making exp*typ or not since exps have types?*)
                 | SWhile of exp*stm
                 | SFor of (id*exp*typ)*exp*exp*stm (*order of the first trouple? is an assignment*)
-                | SIf of exp*typ*stm (*need typ there since expression needs to be type bool?*)
-                | SIfElse of exp*typ*stm*stm
+                | SIf of exp*stm 
+                | SIfElse of exp*stm*stm
                 | SBlock of stm list
 
   datatype def = DFun of id*typ*(paramdecl list)*(stm list)
@@ -144,9 +144,12 @@ struct
       | SInit()
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
-      | SFor()
-      | SIf
-      | SIfElse
+      | SFor((i, e, t), e1, e2, s) => 
+          "SFor(" ^ expToString(e1) ^ "," ^ 
+          expToString(e2) ^ "," ^ stmToString(s) ")"
+      | SIf(e,s) => "SIf(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
+      | SIfElse(e, s1, s2) => "SIfElse(" ^ expToString(e) ^ "," 
+       ^ stmToString(s1) ^ "," stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
 
   fun programToString(p : program) : string =
