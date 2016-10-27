@@ -51,7 +51,7 @@ struct
   *)
   datatype stm = SExp of exp
                 | SDecl of typ*(id list) (*follows a different form than asst, this ok?*)
-                | SInit of typ*(id*exp list)
+                | SInit of typ*(id*exp) list
                 | SRet of exp 
                 | SWhile of exp*stm
                 | SFor of (id*exp*typ)*exp*exp*stm (*order of the first trouple? is an assignment*)
@@ -128,38 +128,48 @@ struct
       [] => ""
       | x::xs => expToString(x) ^ expLToString(xs) 
 
-  (*given a statement list, returns them as strings*)
+
+
+
+  (*given a list of ids*expressions returns as a list of strings*)
+  fun initsToString (l : (id*exp) list ) : string =
+    case l of
+      [] => ""
+      | (i,e)::xs => "(" ^ i ^ "," ^ expToString(e) ^ ")" 
+                    ^ "," ^ initsToString(xs) 
+
+   (*turns id list to string*)
+   fun idLToString(l : id list) : string =
+    case l of
+      [] => ""
+      | x::xs => x ^ "," ^ idLToString(xs)
+ 
+  (*turns statement list to string*)                  
   fun stmLToString (l: stm list) : string =
     case l of 
       [] => ""
       | x::xs => stmToString(x) ^ "," ^ stmLToString(xs)
 
-  (*given a list of ids*expressions returns as a list of strings*)
-  fun initsToString (l : id*exp list ) : string =
-    case l of
-      [] => ""
-      | (i,e)::xs => "(" ^ i ^ "," expToString(e) ^ ")" 
-                    ^ "," ^ initsToString(xs) 
-
-  fun stmToString (s: stm) : string = 
+  and stmToString (s: stm) : string = 
     case s of
       SExp(e) => "SExp(" ^ expToString(e) ^ ")"
       | SRet(r) => "SRet(" ^ expToString(r) ^ ")"
       | SDecl(t, l) => 
           "SDecl(" ^ typToString(t) ^ "," ^
-          ListFormat.listToString String.toString ids ")"*)
-          ListFormat.listToString String.toString ids ")"
+             idLToString(l) ^ ")"
       | SInit(t, l) => "SInit(" ^ typToString(t) ^ "," ^ 
                         initsToString(l) ^ ")"
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
           "SFor(" ^ expToString(e1) ^ "," ^ 
-          expToString(e2) ^ "," ^ stmToString(s) ")"
+          expToString(e2) ^ "," ^ stmToString(s) ^ ")"
       | SIf(e,s) => "SIf(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SIfElse(e, s1, s2) => "SIfElse(" ^ expToString(e) ^ "," 
-       ^ stmToString(s1) ^ "," stmToString(s2) ^ ")"
+       ^ stmToString(s1) ^ "," ^ stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
+
+        (*given a statement list, returns them as strings*)
 
   fun programToString(p : program) : string =
     ""
