@@ -286,9 +286,9 @@ struct
         variable is the initialization type *)
         (* process: pull current environment, see if any ids are there, if so raise error
           otherwise keep going and make sure all e's have same type as t *)
-       (* | Ast.SInit(t, (i,e)) => if declCheck(tupToSing(i,e)) 
+        (*| Ast.SInit(t, (i,e)) => if declCheck(tupToSing(i,e)) 
                           then if initCheck((i,e), tToT(t)) 
-                                  then AnnAst.SInit(tToT(t), map fn(x,y) => ,(i,e))
+                                  then AnnAst.SInit(tToT(t), map fn(x,y) => (AnnAst.EId(,(i,e))
                                   else raise TypeError
                           else raise TypeError*)
         (*| Ast.SReturn(e) =>
