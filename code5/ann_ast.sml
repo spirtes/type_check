@@ -150,6 +150,7 @@ struct
           ListFormat.listToString String.toString ids ")"*)
           ListFormat.listToString String.toString ids ")"
       | SInit(t, l) => "SInit(" ^ typToString(t) ^ "," ^ 
+                        initsToString(l) ^ ")"
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
