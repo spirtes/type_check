@@ -17,6 +17,7 @@ struct
                  Tvoid | Tfunc
 
   type id = string 
+  type paramdecl = typ*id
 
   (*  The annotated type of expressions.  I have provided a couple of 
   *   clauses for you, but you need to supply the rest.
@@ -58,7 +59,7 @@ struct
                 | SIfElse of exp*typ*stm*stm
                 | SBlock of stm list
 
-  datatype def = DFun of id*typ*(id*typ list)*(stm list)
+  datatype def = DFun of id*typ*(paramdecl list)*(stm list)
                 | FProt of id*typ*(id*typ list)
 
   
@@ -120,6 +121,8 @@ struct
   (*  You must spply a function to convert (annotated) programs to
   *   strings for the driver program.
   *)
+  fun stmToString (s: stm )
+
   fun programToString(p : program) : string =
     ""
 
