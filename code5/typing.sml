@@ -93,6 +93,16 @@ struct
                       NONE => idHelper(id, xs)
                       | SOME t => AnnAst.EId(id, t))
 
+
+  (* returns true if the expression type checks with the given type *)
+  fun typeMatch (ty : AnnAst.typ, e: Ast.exp) : bool =
+    if ((typeInt(e) andalso ty = AnnAst.Tint) orelse
+        (typeDouble(e) andalso ty = AnnAst.Tdouble) orelse
+        (typeBool(e) andalso ty = AnnAst.Tbool) orelse
+        (typeString(e) andalso ty = AnnAst.Tstring))
+    then true
+    else false
+
   fun asstHelper (id: Ast.id, envi: env, e: Ast.exp) : AnnAst.exp =
     let val (_,cont) = envi
         fun asstHelperHelper (id: Ast.id, cont: context) : AnnAst.typ =
@@ -103,22 +113,7 @@ struct
                     | SOME t => t)
         val ty = asstHelperHelper(id, cont)
         in
-          if typeInt(e) 
-            then (if ty = AnnAst.Tint 
-                    then AnnAst.EAsst(id,inferExp(envi,e),ty)
-                    else raise TypeError)
-          else if typeString(e) 
-                  then (if ty = AnnAst.Tstring
-                        then AnnAst.EAsst(id,inferExp(envi,e),ty)
-                        else raise TypeError)
-          else if typeDouble(e) 
-                then (if ty = AnnAst.Tdouble
-                      then AnnAst.EAsst(id,inferExp(envi,e),ty)
-                      else raise TypeError)
-          else if typeBool(e) 
-                then (if ty = AnnAst.Tbool
-                      then AnnAst.EAsst(id,inferExp(envi,e),ty)
-                      else raise TypeError)
+          if typeMatch(ty, e) then AnnAst.EAsst(id, inferExp(envi,e),ty)
           else raise TypeError
         end
 
@@ -273,7 +268,9 @@ struct
         fun initCheck(idel: (Ast.id*Ast.exp) list, t: AnnAst.typ) : bool =
           case idel of
             [] => true
-            | (id,ex) :: xs => 
+            | (id,ex) :: xs => case typeMatch(t, ex) of 
+                                true => initCheck(xs, t)
+                                | false => raise TypeError
     in
       case s of
         SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -288,7 +285,7 @@ struct
         (* process: pull current environment, see if any ids are there, if so raise error
           otherwise keep going and make sure all e's have same type as t *)
         | SInit(t, l) => if declCheck(tupToSing(l)) 
-                          then if initBuild(l, tToT(t)) 
+                          then if initCheck(l, tToT(t)) 
                             then AnnAst.SInit(tToT(t), l)
         | SReturn(e) =>
         | SDowhile(s0, e) =>
