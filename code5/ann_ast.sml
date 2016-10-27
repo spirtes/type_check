@@ -129,20 +129,20 @@ struct
       | x::xs => expToString(x) ^ expLToString(xs) 
 
   (*given a statement list, returns them as strings*)
-  fun stmLToString (l: stm list) : string =
+  (*fun stmLToString (l: stm list) : string =
     case l of 
       [] => ""
-      | x::xs => stmToString(x) ^ "," ^ stmLToString(xs)
+      | x::xs => stmToString(x) ^ "," ^ stmLToString(xs)*)
 
-  fun stmToString (s: stm) : string = 
+  (*fun stmToString (s: stm) : string = 
     case s of
       SExp(e) => "SExp(" ^ expToString(e) ^ ")"
       | SRet(r) => "SRet(" ^ expToString(r) ^ ")"
       | SDecl(t, l) => 
           "SDecl(" ^ typToString(t) ^ "," ^
-          ListFormat.listToString String.toString ids ")"
-      | SInit()
-      | SWhile(e, s) => 
+          ListFormat.listToString String.toString ids ")"*)
+      (*| SInit()*)
+      (*| SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
           "SFor(" ^ expToString(e1) ^ "," ^ 
@@ -150,7 +150,7 @@ struct
       | SIf(e,s) => "SIf(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SIfElse(e, s1, s2) => "SIfElse(" ^ expToString(e) ^ "," 
        ^ stmToString(s1) ^ "," stmToString(s2) ^ ")"
-      | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
+      | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"*)
 
   fun programToString(p : program) : string =
     ""
