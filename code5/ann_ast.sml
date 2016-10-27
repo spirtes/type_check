@@ -14,7 +14,7 @@ struct
   *)
   datatype typ = Tbool | Tint | 
                  Tdouble | Tstring |
-                 Tvoid
+                 Tvoid | Tfunc
 
   type id = string 
 
