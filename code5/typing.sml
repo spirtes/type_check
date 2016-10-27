@@ -1,6 +1,7 @@
 (*  COMP 321 Homework 5:  CPP typing engine.
 *   
-*   N. Danner
+*   Torie Davids
+*   Lex Spirtes
 *)
 
 structure Typing =
