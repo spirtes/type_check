@@ -121,7 +121,33 @@ struct
   (*  You must spply a function to convert (annotated) programs to
   *   strings for the driver program.
   *)
-  fun stmToString (s: stm )
+
+  (*given an exp list l, returns it as a string*)
+  fun expLToString (l: exp list) : string =
+    case l of
+      [] => ""
+      | x::xs => expToString(x) ^ expLToString(xs) 
+
+  (*given a statement list, returns them as strings*)
+  fun stmLToString (l: stm list) : string =
+    case l of 
+      [] => ""
+      | x::xs => stmToString(x) ^ "," ^ stmLToString(xs)
+
+  fun stmToString (s: stm) : string = 
+    case s of
+      SExp(e) => "SExp(" ^ expToString(e) ^ ")"
+      | SRet(r) => "SRet(" ^ expToString(r) ^ ")"
+      | SDecl(t, l) => 
+          "SDecl(" ^ typToString(t) ^ "," ^
+          ListFormat.listToString String.toString ids ")"
+      | SInit()
+      | SWhile(e, s) => 
+          "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
+      | SFor()
+      | SIf
+      | SIfElse
+      | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
 
   fun programToString(p : program) : string =
     ""
