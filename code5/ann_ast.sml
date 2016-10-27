@@ -52,7 +52,7 @@ struct
   datatype stm = SExp of exp
                 | SDecl of typ*(id list) (*follows a different form than asst, this ok?*)
                 | SInit of typ*(id*exp list)
-                | SRet of exp (*worth making exp*typ or not since exps have types?*)
+                | SRet of exp 
                 | SWhile of exp*stm
                 | SFor of (id*exp*typ)*exp*exp*stm (*order of the first trouple? is an assignment*)
                 | SIf of exp*stm 
@@ -134,6 +134,13 @@ struct
       [] => ""
       | x::xs => stmToString(x) ^ "," ^ stmLToString(xs)
 
+  (*given a list of ids*expressions returns as a list of strings*)
+  fun initsToString (l : id*exp list ) : string =
+    case l of
+      [] => ""
+      | (i,e)::xs => "(" ^ i ^ "," expToString(e) ^ ")" 
+                    ^ "," ^ initsToString(xs) 
+
   fun stmToString (s: stm) : string = 
     case s of
       SExp(e) => "SExp(" ^ expToString(e) ^ ")"
@@ -141,7 +148,7 @@ struct
       | SDecl(t, l) => 
           "SDecl(" ^ typToString(t) ^ "," ^
           ListFormat.listToString String.toString ids ")"
-      | SInit()
+      | SInit(t, l) => "SInit(" ^ typToString(t) ^ "," ^ 
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
