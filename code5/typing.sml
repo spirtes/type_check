@@ -273,6 +273,9 @@ struct
             | (id,ex) :: xs => case typeMatch(t, ex) of 
                                 true => initCheck(xs, t)
                                 | false => raise TypeError
+
+        fun idToId(i : Ast.id) : AnnAst.id =
+          i
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -287,11 +290,14 @@ struct
         variable is the initialization type *)
         (* process: pull current environment, see if any ids are there, if so raise error
           otherwise keep going and make sure all e's have same type as t *)
-        (*| Ast.SInit(t, (i,e)) => if declCheck(tupToSing(i,e)) 
-                          then if initCheck((i,e), tToT(t)) 
-                                  then AnnAst.SInit(tToT(t), map fn(x,y) => (AnnAst.EId(,(i,e))
+        | Ast.SInit(t, (l)) => if declCheck(tupToSing(l)) 
+                          then if initCheck((l), tToT(t)) 
+                                  then AnnAst.SInit(tToT(t), 
+                                            map (fn(x,y) => (idToId(x), 
+                                                     inferExp(envi,y))) 
+                                                      (l))
                                   else raise TypeError
-                          else raise TypeError*)
+                          else raise TypeError
         (*| Ast.SReturn(e) =>
         | Ast.SDowhile(s0, e) =>
         | Ast.SWhile(e, s0) =>

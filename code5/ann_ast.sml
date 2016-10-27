@@ -123,13 +123,10 @@ struct
   *)
 
   (*given an exp list l, returns it as a string*)
-  fun expLToString (l: exp list) : string =
+ (* fun expLToString (l: exp list) : string =
     case l of
       [] => ""
-      | x::xs => expToString(x) ^ expLToString(xs) 
-
-
-
+      | x::xs => expToString(x) ^ expLToString(xs) *)
 
   (*given a list of ids*expressions returns as a list of strings*)
   fun initsToString (l : (id*exp) list ) : string =
@@ -157,6 +154,8 @@ struct
       | SDecl(t, l) => 
           "SDecl(" ^ typToString(t) ^ "," ^
              idLToString(l) ^ ")"
+          ListFormat.listToString String.toString ids ")"
+          ListFormat.listToString String.toString ids ")"
       | SInit(t, l) => "SInit(" ^ typToString(t) ^ "," ^ 
                         initsToString(l) ^ ")"
       | SWhile(e, s) => 
@@ -168,9 +167,10 @@ struct
       | SIfElse(e, s1, s2) => "SIfElse(" ^ expToString(e) ^ "," 
        ^ stmToString(s1) ^ "," ^ stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
+       ^ stmToString(s1) ^ "," stmToString(s2) ^ ")"
+      | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"*)
 
         (*given a statement list, returns them as strings*)
-
   fun programToString(p : program) : string =
     ""
 
