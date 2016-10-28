@@ -22,7 +22,7 @@ struct
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
-  val emptyMap : AnnAst.typ Environ.map = Environ.empty
+  val emptyMap : (AnnAst.typ * AnnAst.typ list) Environ.map = Environ.empty
 
 (*exceptions*)
   exception TypeError
@@ -477,21 +477,14 @@ struct
      end
 
 
- (* fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
+ fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
     case d of
     
       Ast.DFun(t,id, (p), (s)) => 
                 AnnAst.DFun(tToT(t),inferExp(envi, id),   )
       | Ast.DFunProt(t, id, (p)) => 
-      | _ => raise TypeError *)(* no global variables *) 
+      | _ => raise TypeError (* no global variables *) 
 
-  (* functions to assist in creation of the base environment *)
-  (*  val envRI = Environ.insert(emptyMap, "readInt", (AnnAst.Tint, emptyMap))
-    val envRB = Environ.insert(envRI, "readBool", (AnnAst.Tint, emptyMap))
-    val envRD = Environ.insert(envRB, "readDouble", (AnnAst.Tint, emptyMap))
-    val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, Environ.insert(emptyMap, )))
-    val envPB =
-    val envPD =*)
 
   fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
     case d of
@@ -510,10 +503,38 @@ struct
                                     end*)
       | _ => raise TypeError
 
+    (*functions to assist in creating base environment*)
+    val envRI = Environ.insert(emptyMap, "readInt", (AnnAst.Tint, []))
+    val envRB = Environ.insert(envRI, "readBool", (AnnAst.Tint, []))
+    val envRD = Environ.insert(envRB, "readDouble", (AnnAst.Tint, []))
+    val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, [AnnAst.Tint]))
+    val envPB = Environ.insert(envPI, "printBool", (AnnAst.Tvoid, [AnnAst.Tint]))
+    val envPD = Environ.insert(envPB, "printDouble", (AnnAst.Tvoid, [AnnAst.Tint]))
+    val baseEnv : env = (envPD, [Environ.empty])
+
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
   fun checkPgm (p : Ast.program) : AnnAst.program =
-    raise TypeError
+   (* let
+      fun funInEnv(e: env, d : Ast.def) : env =
+        let
+          val (funcs, cont) = e
+          val (ret, params) = funcs
+        in
+          case d of
+            Ast.DFun(t,id, (p), (s)) => Environ.insert(funcs, )
+            | Ast.DFunProt(t, id, (p)) =>
+            | _ => raise TypeError
+        end
+
+       fun listToList(e : env, d : Ast.def list) : AnnAst.def list =
+          case d of
+          [] => []
+          | x :: xs => checkDef(x) :: listToList(e, xs)
+    in
+    case p of
+      Ast.PDefs(dl) => AnnAst.PDefs(listToList(baseEnv, dl))
+    end*) raise TypeError
 
 end
 
