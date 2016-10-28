@@ -361,10 +361,10 @@ struct
                                     else raise TypeError
     end
     
-  (*fun checkDef (d : Ast.def) : AnnAst.def = 
+  fun checkDef (d : Ast.def) : AnnAst.def = 
     case d of 
       Ast.DFun(t,id, (p), (s)) =>
-      | Ast.DFunProt(t, id, (p)) =>  *)
+      | Ast.DFunProt(t, id, (p)) =>  
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
