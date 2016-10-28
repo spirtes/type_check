@@ -61,7 +61,7 @@ struct
                 | SDoWhile of stm*exp
 
   datatype def = DFun of typ*id*(paramdecl list)*(stm list)
-                | DProt of id*typ*(paramdecl list)
+                | DProt of typ*id*(typ list)
 
   
   datatype program = PDef of def list
@@ -202,12 +202,17 @@ struct
       | (t,i)::xs => "(" ^ typToString(t) ^ "," ^ 
         String.toString(i) ^ ")" ^ paramToString(xs) ^ ")"
 
+  fun typLToString (l: typ list) : string =
+    case l of
+      [] => ""
+      |x::xs => typToString(x) ^ "," ^ typLToString(xs)
+
   fun defToString (d: def) : string =
     case d of
       DFun(t,i,p,s) => "DFun(" ^ typToString(t) ^ "," ^ i
          ^ paramToString(p) ^ "," ^ stmLToString(s) ^ ")"
-      | DProt(i,t,p) => "DProt(" ^ i ^ "," ^ typToString(t)
-        ^ "," ^ paramToString(p) ^ ")"
+      | DProt(t,i,p) => "DProt(" ^ typToString(t) ^ "," ^ i
+        ^ "," ^ typLToString(p) ^ ")"
   
   fun defListToString (d: def list) : string = 
       case d of 

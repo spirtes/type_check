@@ -428,7 +428,7 @@ struct
                     NONE => newCont(p, Environ.empty)
                     | SOME (t, tl) => if compareParams(tl, p) 
                                         then newCont(p, Environ.empty)
-                                      else raise TypeError
+                                      else raise MultiplyDeclaredError(f)
                 end 
     
     (*changes an Ast.paramdecl to AnnAst.paramdecl*)
@@ -441,12 +441,21 @@ struct
         [] => []
         |(t,i)::xs => pToP(t,i)::paramToParam(xs)
 
-
+    (*changes Ast.prototype to Annast.typ*)
+    fun protoToTyp (p: Ast.prototype) : AnnAst.typ = 
+      tToT(p)
+    
     (*given an Ast.paramdecl list gives back a typ list*)
+    fun protoToParamType (p: Ast.prototype list) : AnnAst.typ list =
+      case p of
+        [] => []
+        |(t)::xs => protoToTyp(t)::protoToParamType(xs)
+
+    (*given a Ast.paramdecl list creates it as an AnnAst.typ list*)
     fun paramToParamType (p: Ast.paramdecl list) : AnnAst.typ list =
       case p of
         [] => []
-        |(t,id)::xs => tToT(t)::paramToParamType(xs)
+        |(t,i)::xs => tToT(t)::paramToParamType(xs) 
 
   (*makes params map compatible*)
   (*fun insertParams(p: Ast.paramdecl list, envi: env) : AnnAst.typ Environ.map =
@@ -474,33 +483,38 @@ struct
           paramToParamType(p))), cont)
         | SOME t => raise MultiplyDeclaredError(id)
 
-     end
+     end 
 
+  fun addFProtToEnv(id: Ast.id, t: Ast.typ, p: Ast.prototype list, envi: env) : env =
+    let
+       val (funcs, cont) = envi
+     in
+       case Environ.find(funcs, id) of
+        NONE => 
+          (Environ.insert(funcs, idToId(id), (tToT(t), 
+          protoToParamType(p))), cont)
+        | SOME t => raise MultiplyDeclaredError(id)
 
- fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
-    case d of
-    
-      Ast.DFun(t,id, (p), (s)) => 
-                AnnAst.DFun(tToT(t),inferExp(envi, id),   )
-      | Ast.DFunProt(t, id, (p)) => 
-      | _ => raise TypeError (* no global variables *) 
+     end 
 
 
   fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
     case d of
-      Ast.DFun(t,id, (p), (s)) => let
-                                    val newEnv = addFToEnv(id, t, p, checkParam(p, id, envi))
+      Ast.DFun(t,id, (p),(s)) => let
+                                  val newEnv = 
+                                  addFToEnv(id, t, p, checkParam(p, id, envi))
                                     (*ugly *)
                                   in     
                                     AnnAst.DFun(tToT(t),id,
                                     paramToParam(p), stmToStm(s, newEnv, t))
                                   end
               
-      | Ast.DFunProt(t, id, (p)) => raise TypeError(*let
-                                      val newEnv = addFToEnv(id, t, envi)
-                                     in
-                                      AnnAst.DProt 
-                                    end*)
+      | Ast.DFunProt(t, id, (p)) => let
+                                      val newEnv = addFProtToEnv(id,t, p, envi)
+                                        in
+                                      AnnAst.DProt(tToT(t), id, protoToParamType(p))
+                                   end 
+                                    
       | _ => raise TypeError
 
     (*functions to assist in creating base environment*)
