@@ -16,11 +16,12 @@ struct
   (* sign : keys are function ids, values are type, param list (type, id) tuples *)
   (* context: list of (type, id) maps that display local environments and variables in scope *)
   (* the env is a tuple of signatures and contexts *)
-  type env = (AnnAst.typ * AnnAst.typ Environ.map) Environ.map * (AnnAst.typ Environ.map list)
-  type sign = (AnnAst.typ * AnnAst.typ Environ.map) Environ.map
+  type env = (AnnAst.typ * AnnAst.typ list) Environ.map * (AnnAst.typ Environ.map list)
+  type sign = (AnnAst.typ * AnnAst.typ list) Environ.map
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
+  val emptyMap : AnnAst.typ Environ.map = Environ.empty
 
 (*exceptions*)
   exception TypeError
@@ -115,20 +116,19 @@ struct
     fun funcLookup (id: Ast.id,envi: env,param: Ast.exp list,dex: int): AnnAst.id * AnnAst.typ =
       let val (funcs, cont) = envi
           val newL = List.length(param)
-          fun setCurrFun(id: Ast.id) : AnnAst.typ * AnnAst.typ Environ.map =
+          fun setCurrFun(id: Ast.id) : AnnAst.typ * AnnAst.typ list =
             case Environ.find(funcs, id) of
               NONE => raise UndeclaredError(id)
               | SOME (currFret, fParam) => (currFret, fParam)
           val (currFRet, fParams) = setCurrFun(id)
-          val storedL = Environ.numItems(fParams)
-          val listStored = Environ.listItemsi(fParams)
+          val storedL = List.length(fParams)
       in
         case newL = storedL of
           false => raise TypeError
           | true => case param of
                     [] => (idToId(id), currFRet) 
                     | x :: xs => let
-                      val (id, ty) = List.nth(listStored, dex)
+                      val (ty) = List.nth(fParams, dex)
                       in
                         case typeMatch(ty, x) of
                           true => funcLookup(id, envi, xs, dex+1)
@@ -422,12 +422,21 @@ struct
      end  *)
 
 
-  (*fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
+ (* fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
     case d of
     
       Ast.DFun(t,id, (p), (s)) => 
                 AnnAst.DFun(tToT(t),inferExp(envi, id),   )
-      | Ast.DFunProt(t, id, (p)) =>  *)
+      | Ast.DFunProt(t, id, (p)) => 
+      | _ => raise TypeError *)(* no global variables *) 
+
+  (* functions to assist in creation of the base environment *)
+  (*  val envRI = Environ.insert(emptyMap, "readInt", (AnnAst.Tint, emptyMap))
+    val envRB = Environ.insert(envRI, "readBool", (AnnAst.Tint, emptyMap))
+    val envRD = Environ.insert(envRB, "readDouble", (AnnAst.Tint, emptyMap))
+    val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, Environ.insert(emptyMap, )))
+    val envPB =
+    val envPD =*)
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
