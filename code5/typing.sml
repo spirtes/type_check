@@ -283,11 +283,10 @@ struct
             NONE => true
             | SOME t => raise MultiplyDeclaredError(id)
 
-        fun validSList (ss : Ast.stm list) : bool =
-          case ss of
-            [] => true
-            | x :: xs => if checkStmt(x) = then validSList(xs)
-                        else false 
+        fun stmToStm (sl : Ast.stm list) : AnnAst.stm list =
+          case sl of
+            [] => [] 
+            | x :: xs => checkStmt(envi, x, ret)::stmToStm(xs)
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -348,7 +347,7 @@ struct
                                             end
                                           else raise TypeError
         (*is valid if ss is valid, variable decs in ss are local to block*)
-        | Ast.SBlock(sl) => 
+        | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl))
         (*valid if e has type bool and s is valid*)
         | Ast.SIf(e, s0) => if typeBool(e) 
                               then AnnAst.SIf(inferExp(envi,e),
@@ -362,10 +361,10 @@ struct
                                     else raise TypeError
     end
     
-  fun checkDef (d : Ast.def) : AnnAst.def = 
+  (*fun checkDef (d : Ast.def) : AnnAst.def = 
     case d of 
       Ast.DFun(t,id, (p), (s)) =>
-      | Ast.DFunProt(t, id, (p)) =>  
+      | Ast.DFunProt(t, id, (p)) =>  *)
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
