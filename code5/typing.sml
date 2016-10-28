@@ -12,9 +12,12 @@ struct
                                     type ord_key = string
                                     val compare = String.compare
                                     end)
-
-  type env = AnnAst.typ Environ.map * (AnnAst.typ Environ.map list)
-  type sign = AnnAst.typ Environ.map
+  
+  (* sign : keys are function ids, values are type, param list (type, id) tuples *)
+  (* context: list of (type, id) maps that display local environments and variables in scope *)
+  (* the env is a tuple of signatures and contexts *)
+  type env = (AnnAst.typ, AnnAst.typ Environ.map) Environ.map * (AnnAst.typ Environ.map list)
+  type sign = (AnnAst.typ, AnnAst.typ Environ.map) Environ.map
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
@@ -132,6 +135,10 @@ struct
         | Ast.ETrue => AnnAst.ETrue(true)
         | Ast.EFalse => AnnAst.EFalse(false)
         | Ast.EId(id) => idHelper(id, context)
+        (* func(hello,joe) *)
+        (* it has type t if and only if f takes exactly n params
+          * of types t_0-t_n, 
+          *)
         | Ast.ECall(id, (l)) => (case Environ.find(funcs, id) of
                                 NONE => raise UndeclaredError(id)
                                 | SOME t => (*AnnAst.ECall(inferExp(id), 
