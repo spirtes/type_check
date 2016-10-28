@@ -23,6 +23,7 @@ struct
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
   val emptyMap : (AnnAst.typ * AnnAst.typ list) Environ.map = Environ.empty
+  val emptyContext : AnnAst.typ Environ.map = Environ.empty
 
 (*exceptions*)
   exception TypeError
@@ -298,7 +299,7 @@ struct
             [] => true
             | id :: ids => (case Environ.find(x, id) of
                               NONE => let 
-                                      val newEnv = ((func),Environ.insert(x, 
+                                      val newEnv = ((func),Environ.insert(emptyContext, 
                                                             idToId(id), 
                                                             tToT(t))::conte)
                                     in
