@@ -277,11 +277,17 @@ struct
         fun idToId(i : Ast.id) : AnnAst.id =
           i
 
-        fun isIn (id: Ast.id) : bool = 
+        fun isIn (id : Ast.id) : bool = 
           (* this could be funky? should this be checking all layers of context? *)
           case Environ.find(List.hd(cont), id) of
             NONE => true
             | SOME t => raise MultiplyDeclaredError(id)
+
+        fun validSList (ss : Ast.stm list) : bool =
+          case ss of
+            [] => true
+            | x :: xs => if checkStmt(x) = then validSList(xs)
+                        else false 
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -341,13 +347,14 @@ struct
                                                     checkStmt(newEnv,s0,ret))
                                             end
                                           else raise TypeError
-        (*| Ast.SBlock(sl) =>*)
-          (*valid if e has type bool and s is valid*)
+        (*is valid if ss is valid, variable decs in ss are local to block*)
+        | Ast.SBlock(sl) => 
+        (*valid if e has type bool and s is valid*)
         | Ast.SIf(e, s0) => if typeBool(e) 
                               then AnnAst.SIf(inferExp(envi,e),
                                               checkStmt(envi,s0,ret))
                             else raise TypeError
-        (*valid if e has type bool and s0 and s1 valid*)
+      (*valid if e has type bool and s0 and s1 valid*)
        | Ast.SIfElse(e, s0, s1) => if typeBool(e)
                                       then AnnAst.SIfElse(inferExp(envi,e),
                                                           checkStmt(envi,s0,ret),
@@ -355,7 +362,10 @@ struct
                                     else raise TypeError
     end
     
-
+  fun checkDef (d : Ast.def) : AnnAst.def = 
+    case d of 
+      Ast.DFun(t,id, (p), (s)) =>
+      | Ast.DFunProt(t, id, (p)) =>  
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
