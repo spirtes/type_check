@@ -60,7 +60,7 @@ struct
                 | SBlock of stm list
                 | SDoWhile of stm*exp
 
-  datatype def = DFun of id*typ*(paramdecl list)*(stm list)
+  datatype def = DFun of typ*id*(paramdecl list)*(stm list)
                 | DProt of id*typ*(paramdecl list)
 
   
@@ -194,14 +194,17 @@ struct
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
 
 
+
+  
   fun paramToString (p : paramdecl list) : string =
     case p of
       [] => ""
-      | (t,i)::xs => "(" ^ typToString(t) ^ "," ^ i ^ ")" ^ paramToString(xs)
+      | (t,i)::xs => "(" ^ typToString(t) ^ "," ^ 
+        String.toString(i) ^ ")" ^ paramToString(xs) ^ ")"
 
   fun defToString (d: def) : string =
     case d of
-      DFun(i,t,p,s) => "DFun(" ^ i ^ "," ^ typToString(t)
+      DFun(t,i,p,s) => "DFun(" ^ typToString(t) ^ "," ^ i
          ^ paramToString(p) ^ "," ^ stmLToString(s) ^ ")"
       | DProt(i,t,p) => "DProt(" ^ i ^ "," ^ typToString(t)
         ^ "," ^ paramToString(p) ^ ")"

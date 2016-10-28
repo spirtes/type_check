@@ -18,6 +18,7 @@ struct
   (* the env is a tuple of signatures and contexts *)
   type env = (AnnAst.typ * AnnAst.typ list) Environ.map * (AnnAst.typ Environ.map list)
   type sign = (AnnAst.typ * AnnAst.typ list) Environ.map
+
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
@@ -171,6 +172,7 @@ struct
         | Ast.EId(id) => idHelper(id, context)
         | Ast.ECall(id, (l)) => AnnAst.ECall(funcLookup(id, envi, l, 0),
                                              expToExp(envi, l))
+
         | Ast.EPostIncr(id) => incrHelper(id, AnnAst.EPostIncr, context)
         | Ast.EPostDecr(id) => incrHelper(id, AnnAst.EPostDecr, context)
         | Ast.ENot(n) => if typeBool(e)
@@ -276,10 +278,14 @@ struct
       | Ast.Tstring => AnnAst.Tstring
       | Ast.Tvoid => AnnAst.Tvoid
 
+  fun stmToStm (sl : Ast.stm list, envi: env, ret: Ast.typ) : AnnAst.stm list =
+          case sl of
+            [] => [] 
+            |x :: xs => (checkStmt(envi, x, ret))::stmToStm(xs, envi, ret)
   (* checkStmt s = s', where s' is the annotated statement datatype
    * corresponding to s'
    *)
-  fun checkStmt (envi : env, s : Ast.stm, ret : Ast.typ) : AnnAst.stm = 
+  and checkStmt (envi : env, s : Ast.stm, ret : Ast.typ) : AnnAst.stm = 
     let
       val (funcs, cont) = envi
 
@@ -321,10 +327,7 @@ struct
             NONE => true
             | SOME t => raise MultiplyDeclaredError(id)
 
-        fun stmToStm (sl : Ast.stm list) : AnnAst.stm list =
-          case sl of
-            [] => [] 
-            | x :: xs => checkStmt(envi, x, ret)::stmToStm(xs)
+        
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -386,7 +389,7 @@ struct
                                           else raise TypeError
         (*is valid if ss is valid, variable decs in ss are local to block*)
 
-        | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl))
+        | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl, envi, ret))
         (*valid if e has type bool and s is valid*)
         | Ast.SIf(e, s0) => if typeBool(e) 
                               then AnnAst.SIf(inferExp(envi,e),
@@ -400,26 +403,78 @@ struct
                                     else raise TypeError
     end
     
-  (*fun checkParam (p: Ast.paramdecl list, envi: env) : AnnAst.paramdecl =
-          [] => AnnAst.ParamDecl 
-          | x::xs => let
+  fun checkParam (p: Ast.paramdecl list, f: Ast.id, envi: env) : env  =
+            let
             val (funcs,cont) = envi
+
+            fun newCont (p: Ast.paramdecl list, m: AnnAst.typ Environ.map) : env = 
+              case p of 
+                [] => (funcs, m::cont)
+                |(t, id)::xs => newCont(xs, Environ.insert(m, idToId(id),tToT(t)))
+
+            fun compareParams (prot: AnnAst.typ list, newb: Ast.paramdecl list) : bool =
+              case newb of 
+                [] => (case prot of 
+                        [] => true
+                        | _ => false)
+                |(t, id)::xs => (case prot of
+                                [] => false
+                                |p::ps => if tToT(t) = p then
+                                           compareParams(ps, xs)
+                                           else raise TypeError )
+
                 in
-                if inferExp(envi, x)
+                  case Environ.find(funcs, idToId(f)) of 
+                    NONE => newCont(p, Environ.empty)
+                    | SOME (t, tl) => if compareParams(tl, p) 
+                                        then newCont(p, Environ.empty)
+                                      else raise TypeError
+                end 
+    
+    (*changes an Ast.paramdecl to AnnAst.paramdecl*)
+   fun pToP (t: Ast.typ, i: Ast.id) : AnnAst.paramdecl =
+    (tToT(t), idToId(i)) 
+
+    (*given an Ast.paramdecl list will change to AnnAst.paramdecl list*)
+    fun paramToParam (p: Ast.paramdecl list) : AnnAst.paramdecl list = 
+      case p of 
+        [] => []
+        |(t,i)::xs => pToP(t,i)::paramToParam(xs)
 
 
-                 ::checkParam(xs)
-                end *)
-  
-  (*fun addFToEnv(id: Ast.id, t: Ast.typ, envi: env) : env =
+    (*given an Ast.paramdecl list gives back a typ list*)
+    fun paramToParamType (p: Ast.paramdecl list) : AnnAst.typ list =
+      case p of
+        [] => []
+        |(t,id)::xs => tToT(t)::paramToParamType(xs)
+
+  (*makes params map compatible*)
+  (*fun insertParams(p: Ast.paramdecl list, envi: env) : AnnAst.typ Environ.map =
+    case p of
+      [] => envi
+      | x::xs => let
+        val (t, id) = x
+        val ((funcs, params), cont) = envi
+      in
+        case Environ.find(params, id) of
+          NONE => insertParams(p, ((funcs, 
+            Environ.insert(List.hd(params), idToId(id), tToT(t))),
+            cont))
+          | SOME t => raise MultiplyDeclaredError(id)
+      end*)
+
+
+  fun addFToEnv(id: Ast.id, t: Ast.typ, p: Ast.paramdecl list, envi: env) : env =
     let
        val (funcs, cont) = envi
      in
        case Environ.find(funcs, id) of
-        NONE => (Environ.insert(funcs, idToId(id), tToT(t)), cont)
+        NONE => 
+          (Environ.insert(funcs, idToId(id), (tToT(t), 
+          paramToParamType(p))), cont)
         | SOME t => raise MultiplyDeclaredError(id)
 
-     end  *)
+     end
 
 
  (* fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
@@ -437,6 +492,23 @@ struct
     val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, Environ.insert(emptyMap, )))
     val envPB =
     val envPD =*)
+
+  fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
+    case d of
+      Ast.DFun(t,id, (p), (s)) => let
+                                    val newEnv = addFToEnv(id, t, p, checkParam(p, id, envi))
+                                    (*ugly *)
+                                  in     
+                                    AnnAst.DFun(tToT(t),id,
+                                    paramToParam(p), stmToStm(s, newEnv, t))
+                                  end
+              
+      | Ast.DFunProt(t, id, (p)) => raise TypeError(*let
+                                      val newEnv = addFToEnv(id, t, envi)
+                                     in
+                                      AnnAst.DProt 
+                                    end*)
+      | _ => raise TypeError
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
