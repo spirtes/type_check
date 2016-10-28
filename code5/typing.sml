@@ -283,7 +283,7 @@ struct
     let
       val (funcs, cont) = envi
 
-      and declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : bool = 
+      fun declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : bool = 
         (* only checking if this is in the context at top of stack. should we check all? *)
         (let val (func, conte) = envi
              val x = List.hd(conte)
@@ -292,9 +292,9 @@ struct
             [] => true
             | id :: ids => (case Environ.find(x, id) of
                               NONE => let 
-                                      val newEnv = (func,Environ.insert(x, 
+                                      val newEnv = ((func),Environ.insert(x, 
                                                             idToId(id), 
-                                                            tToT(t)))
+                                                            tToT(t))::conte)
                                     in
                                         declCheck(t, ids, newEnv)
                                     end
