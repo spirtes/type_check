@@ -244,6 +244,11 @@ struct
       | Ast.Tstring => AnnAst.Tstring
       | Ast.Tvoid => AnnAst.Tvoid
 
+
+  (*changed an Ast.id to an Annast.id*)
+  fun idToId(i : Ast.id) : AnnAst.id =
+    i
+
   (* checkStmt s = s', where s' is the annotated statement datatype
    * corresponding to s'
    *)
@@ -274,8 +279,6 @@ struct
                                 true => initCheck(xs, t)
                                 | false => raise TypeError
 
-        fun idToId(i : Ast.id) : AnnAst.id =
-          i
 
         fun isIn (id : Ast.id) : bool = 
           (* this could be funky? should this be checking all layers of context? *)
@@ -347,6 +350,7 @@ struct
                                             end
                                           else raise TypeError
         (*is valid if ss is valid, variable decs in ss are local to block*)
+
         | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl))
         (*valid if e has type bool and s is valid*)
         | Ast.SIf(e, s0) => if typeBool(e) 
@@ -361,10 +365,34 @@ struct
                                     else raise TypeError
     end
     
-  fun checkDef (d : Ast.def) : AnnAst.def = 
-    case d of 
-      Ast.DFun(t,id, (p), (s)) =>
-      | Ast.DFunProt(t, id, (p)) =>  
+  (*fun checkParam (p: Ast.paramdecl list, envi: env) : AnnAst.paramdecl =
+          [] => AnnAst.ParamDecl 
+          | x::xs => let
+            val (funcs,cont) = envi
+                in
+                if inferExp(envi, x)
+
+
+                 ::checkParam(xs)
+                end *)
+  
+  fun addFToEnv(id: Ast.id, t: Ast.typ, envi: env) : env =
+    let
+       val (funcs, cont) = envi
+     in
+       case Environ.find(funcs, id) of
+        NONE => (Environ.insert(funcs, idToId(id), tToT(t)), cont)
+        | SOME t => raise MultiplyDeclaredError(id)
+
+     end  
+
+
+  (*fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
+    case d of
+    
+      Ast.DFun(t,id, (p), (s)) => 
+                AnnAst.DFun(tToT(t),inferExp(envi, id),   )
+      | Ast.DFunProt(t, id, (p)) =>  *)
 
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
