@@ -12,7 +12,7 @@ struct
                                     type ord_key = string
                                     val compare = String.compare
                                     end)
-  
+
   (* sign : keys are function ids, values are type, param list (type, id) tuples *)
   (* context: list of (type, id) maps that display local environments and variables in scope *)
   (* the env is a tuple of signatures and contexts *)
@@ -138,6 +138,7 @@ struct
         (* func(hello,joe) *)
         (* it has type t if and only if f takes exactly n params
           * of types t_0-t_n, 
+          * comment
           *)
         | Ast.ECall(id, (l)) => (case Environ.find(funcs, id) of
                                 NONE => raise UndeclaredError(id)
