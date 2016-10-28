@@ -124,10 +124,13 @@ struct
   *)
 
   (*given an exp list l, returns it as a string*)
- (* fun expLToString (l: exp list) : string =
+  fun expLToString (l: exp list) : string =
     case l of
       [] => ""
-      | x::xs => expToString(x) ^ expLToString(xs) *)
+      | x::xs => expToString(x) ^ expLToString(xs) 
+
+
+
 
   (*given a list of ids*expressions returns as a list of strings*)
   fun initsToString (l : (id*exp) list ) : string =
@@ -167,7 +170,6 @@ struct
        ^ stmToString(s1) ^ "," ^ stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
 
-<<<<<<< HEAD
   fun paramToString (p : paramdecl list) : string =
     case p of
       [] => ""
@@ -187,15 +189,9 @@ struct
    
 
   fun programToString(PDef p : program) : string =
-    (* (map (defToString 0) p)*)
    case p of
       [] => ""
       | x::xs => defListToString(x::xs)
-=======
-        (*given a statement list, returns them as strings*)
-  fun programToString(p : program) : string =
-    ""
->>>>>>> origin/master
 
 end
 
