@@ -283,13 +283,21 @@ struct
     let
       val (funcs, cont) = envi
 
-      fun declCheck(idl: Ast.id list) : bool = 
-        (let val x = List.hd(cont)
+      and declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : bool = 
+        (* only checking if this is in the context at top of stack. should we check all? *)
+        (let val (func, conte) = envi
+             val x = List.hd(conte)
         in
           case idl of
             [] => true
             | id :: ids => (case Environ.find(x, id) of
-                              NONE => declCheck(ids)
+                              NONE => let 
+                                      val newEnv = (func,Environ.insert(x, 
+                                                            idToId(id), 
+                                                            tToT(t)))
+                                    in
+                                        declCheck(t, ids, newEnv)
+                                    end
                               | SOME t => raise MultiplyDeclaredError(id)
                               )
         end)
@@ -324,21 +332,21 @@ struct
                 in the current block or function*)
         (* process: pull the current environment off the stack, see if any ids are
           there if not you're good if they are you're bad *)
-        | Ast.SDecl(t, idl) => if declCheck(idl) then AnnAst.SDecl(tToT(t), idl)
+        | Ast.SDecl(t, idl) => if declCheck(t, idl, envi) then AnnAst.SDecl(tToT(t), idl)
                             else raise TypeError
         (* \/ valid if none of the variables have been previously assigned a type
         in the current block or function and the type of the expression assigned to the
         variable is the initialization type *)
         (* process: pull current environment, see if any ids are there, if so raise error
           otherwise keep going and make sure all e's have same type as t *)
-        | Ast.SInit(t, (l)) => if declCheck(tupToSing(l)) 
-                          then if initCheck((l), tToT(t)) 
+        | Ast.SInit(t, (l)) => if declCheck(t, tupToSing(l), envi) 
+                                then if initCheck((l), tToT(t)) 
                                   then AnnAst.SInit(tToT(t), 
                                             map (fn(x,y) => (idToId(x), 
                                                      inferExp(envi,y))) 
                                                       (l))
                                   else raise TypeError
-                          else raise TypeError
+                              else raise TypeError
         (* Valid if the type of e is the return type of the current function *)
         (* process: pull current environment, make sure type e is same as function type*)
         | Ast.SReturn(e) => if typeMatch(tToT(ret), e) 
