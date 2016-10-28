@@ -94,8 +94,7 @@ struct
                       NONE => idHelper(id, xs)
                       | SOME t => AnnAst.EId(id, t))
 
-
-  (* returns true if the expression type checks with the given type *)
+   (* returns true if the expression type checks with the given type *)
   fun typeMatch (ty : AnnAst.typ, e: Ast.exp) : bool =
     if ((typeInt(e) andalso ty = AnnAst.Tint) orelse
         (typeDouble(e) andalso ty = AnnAst.Tdouble) orelse
@@ -114,7 +113,7 @@ struct
                     | SOME t => t)
         val ty = asstHelperHelper(id, cont)
         in
-          if typeMatch(ty, e) then AnnAst.EAsst(id, inferExp(envi,e),ty)
+           if typeMatch(ty, e) then AnnAst.EAsst(id, inferExp(envi,e),ty)
           else raise TypeError
         end
 
@@ -262,7 +261,7 @@ struct
                               )
         end)
 
-        fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list =
+        fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list = 
           case l of
             [] => []
             | (id,e) :: xs => id :: tupToSing(xs)
@@ -273,6 +272,9 @@ struct
             | (id,ex) :: xs => case typeMatch(t, ex) of 
                                 true => initCheck(xs, t)
                                 | false => raise TypeError
+
+        fun idToId(i : Ast.id) : AnnAst.id =
+          i
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -287,13 +289,18 @@ struct
         variable is the initialization type *)
         (* process: pull current environment, see if any ids are there, if so raise error
           otherwise keep going and make sure all e's have same type as t *)
-        (*| Ast.SInit(t, (i,e)) => if declCheck(tupToSing(i,e)) 
-                          then if initCheck((i,e), tToT(t)) 
-                                  then AnnAst.SInit(tToT(t), map fn(x,y) => (AnnAst.EId(,(i,e))
+        | Ast.SInit(t, (l)) => if declCheck(tupToSing(l)) 
+                          then if initCheck((l), tToT(t)) 
+                                  then AnnAst.SInit(tToT(t), 
+                                            map (fn(x,y) => (idToId(x), 
+                                                     inferExp(envi,y))) 
+                                                      (l))
                                   else raise TypeError
-                          else raise TypeError*)
-        (*| Ast.SReturn(e) =>
-        | Ast.SDowhile(s0, e) =>
+                          else raise TypeError
+        (* Valid if the type of e is the return type of the current function *)
+        (* process: pull current environment, make sure type e is same as function type*)
+        | Ast.SReturn(e) => 
+        (*| Ast.SDowhile(s0, e) =>
         | Ast.SWhile(e, s0) =>
         | Ast.SFor((t,id,e0),e1,e2,s0) =>
         | Ast.SBlock(sl) =>

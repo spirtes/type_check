@@ -60,7 +60,7 @@ struct
                 | SBlock of stm list
 
   datatype def = DFun of id*typ*(paramdecl list)*(stm list)
-                | FProt of id*typ*(id*typ list)
+                | DProt of id*typ*(paramdecl list)
 
   
   datatype program = PDef of def list
@@ -74,6 +74,7 @@ struct
        | Tdouble => "Tdouble"
        | Tvoid => "Tvoid"
        | Tstring => "Tstring"
+       | TFunc => "TFunc"
 
   (*  You must supply a function to convert (annotated) expressions to
   *   strings for the driver program.
@@ -123,13 +124,10 @@ struct
   *)
 
   (*given an exp list l, returns it as a string*)
-  fun expLToString (l: exp list) : string =
+ (* fun expLToString (l: exp list) : string =
     case l of
       [] => ""
-      | x::xs => expToString(x) ^ expLToString(xs) 
-
-
-
+      | x::xs => expToString(x) ^ expLToString(xs) *)
 
   (*given a list of ids*expressions returns as a list of strings*)
   fun initsToString (l : (id*exp) list ) : string =
@@ -169,9 +167,35 @@ struct
        ^ stmToString(s1) ^ "," ^ stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
 
-        (*given a statement list, returns them as strings*)
+<<<<<<< HEAD
+  fun paramToString (p : paramdecl list) : string =
+    case p of
+      [] => ""
+      | (t,i)::xs => "(" ^ typToString(t) ^ "," ^ i ^ ")" ^ paramToString(xs)
 
+  fun defToString (d: def) : string =
+    case d of
+      DFun(i,t,p,s) => "DFun(" ^ i ^ "," ^ typToString(t)
+         ^ paramToString(p) ^ "," ^ stmLToString(s) ^ ")"
+      | DProt(i,t,p) => "DProt(" ^ i ^ "," ^ typToString(t)
+        ^ "," ^ paramToString(p) ^ ")"
+  
+  fun defListToString (d: def list) : string = 
+      case d of 
+      [] => ""
+      | x::xs => defToString(x) ^ "," ^ defListToString(xs) 
+   
+
+  fun programToString(PDef p : program) : string =
+    (* (map (defToString 0) p)*)
+   case p of
+      [] => ""
+      | x::xs => defListToString(x::xs)
+=======
+        (*given a statement list, returns them as strings*)
   fun programToString(p : program) : string =
     ""
+>>>>>>> origin/master
 
 end
+
