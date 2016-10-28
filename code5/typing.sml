@@ -529,26 +529,19 @@ struct
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
   fun checkPgm (p : Ast.program) : AnnAst.program =
-   (* let
-      fun funInEnv(e: env, d : Ast.def) : env =
-        let
-          val (funcs, cont) = e
-          val (ret, params) = funcs
-        in
-          case d of
-            Ast.DFun(t,id, (p), (s)) => Environ.insert(funcs, )
-            | Ast.DFunProt(t, id, (p)) =>
-            | _ => raise TypeError
-        end
-
+    let
        fun listToList(e : env, d : Ast.def list) : AnnAst.def list =
           case d of
           [] => []
-          | x :: xs => checkDef(x) :: listToList(e, xs)
+          | x :: xs => 
+            let val d2 = checkDef(x, e)
+            in
+              d2 :: listToList(e, xs)
+            end
     in
     case p of
-      Ast.PDefs(dl) => AnnAst.PDefs(listToList(baseEnv, dl))
-    end*) raise TypeError
+      Ast.PDefs(dl) => AnnAst.PDef(listToList(baseEnv, dl))
+    end 
 
 end
 
