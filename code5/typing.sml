@@ -299,7 +299,7 @@ struct
                           else raise TypeError
         (* Valid if the type of e is the return type of the current function *)
         (* process: pull current environment, make sure type e is same as function type*)
-        | Ast.SReturn(e) => 
+        | Ast.SReturn(e) => raise TypeError
         (*| Ast.SDowhile(s0, e) =>
         | Ast.SWhile(e, s0) =>
         | Ast.SFor((t,id,e0),e1,e2,s0) =>

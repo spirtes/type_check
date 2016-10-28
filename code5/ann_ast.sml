@@ -58,6 +58,7 @@ struct
                 | SIf of exp*stm 
                 | SIfElse of exp*stm*stm
                 | SBlock of stm list
+                | SDoWhile of exp*stm
 
   datatype def = DFun of id*typ*(paramdecl list)*(stm list)
                 | DProt of id*typ*(paramdecl list)
@@ -162,6 +163,8 @@ struct
                         initsToString(l) ^ ")"
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
+      | SDoWhile(e,s) =>
+           "SDoWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
           "SFor(" ^ expToString(e1) ^ "," ^ 
           expToString(e2) ^ "," ^ stmToString(s) ^ ")"
@@ -169,6 +172,7 @@ struct
       | SIfElse(e, s1, s2) => "SIfElse(" ^ expToString(e) ^ "," 
        ^ stmToString(s1) ^ "," ^ stmToString(s2) ^ ")"
       | SBlock(ss) => "SBlock(" ^ stmLToString(ss) ^ ")"
+
 
   fun paramToString (p : paramdecl list) : string =
     case p of
@@ -191,7 +195,7 @@ struct
   fun programToString(PDef p : program) : string =
    case p of
       [] => ""
-      | x::xs => defListToString(x::xs)
+      | x => "Program(" ^ defListToString(x) ^ ")"
 
 end
 
