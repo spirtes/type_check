@@ -14,6 +14,7 @@ struct
                                     end)
 
   type env = AnnAst.typ Environ.map * (AnnAst.typ Environ.map list)
+  type sign = AnnAst.typ Environ.map
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
@@ -246,7 +247,7 @@ struct
   (* checkStmt s = s', where s' is the annotated statement datatype
    * corresponding to s'
    *)
-  fun checkStmt (envi : env, s : Ast.stm) : AnnAst.stm = 
+  fun checkStmt (envi : env, s : Ast.stm, ret : Ast.typ) : AnnAst.stm = 
     let
       val (funcs, cont) = envi
 
@@ -275,6 +276,12 @@ struct
 
         fun idToId(i : Ast.id) : AnnAst.id =
           i
+
+        fun isIn (id: Ast.id) : bool = 
+          (* this could be funky? should this be checking all layers of context? *)
+          case Environ.find(cont, id) of
+            NONE => true
+            | SOME t => raise MultiplyDeclaredError(id)
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
@@ -299,11 +306,40 @@ struct
                           else raise TypeError
         (* Valid if the type of e is the return type of the current function *)
         (* process: pull current environment, make sure type e is same as function type*)
-        | Ast.SReturn(e) => raise TypeError
-        (*| Ast.SDowhile(s0, e) =>
-        | Ast.SWhile(e, s0) =>
-        | Ast.SFor((t,id,e0),e1,e2,s0) =>
-        | Ast.SBlock(sl) =>
+        | Ast.SReturn(e) => if typeMatch(tToT(ret), e) 
+                              then AnnAst.SRet(inferExp(envi,e))
+                              else raise TypeError
+        (* Valid is e is of type bool, and s is valid *)
+        (* process: check e is bool, call checkStm s0 *)
+        | Ast.SDowhile(s0, e) => if typeBool(e) 
+                                  then AnnAst.SDoWhile(checkStmt(envi,s0,ret), 
+                                                        inferExp(envi, e))
+                                  else raise TypeError 
+        | Ast.SWhile(e, s0) => if typeBool(e) 
+                                  then AnnAst.SWhile(checkStmt(envi, s0, ret), 
+                                                        inferExp(envi, e))
+                                  else raise TypeError
+        (* Valid if x has not been declared by an initialization or decl in the current block or func, 
+        e0 has type tau, e1, e2 can be any type, s is valid *)
+        (* process: look up id make sure it isn't in environment if it is multiplydclared error, if not
+         * add it to the environment, then check that e1 and e2 are valid and s0 is valid
+            *)
+        | Ast.SFor((t,id,e0),e1,e2,s0) => if isIn(id) 
+                                          then let 
+                                            val newEnv = (*make it type env*)
+                                              (funcs, Environ.insert(cont, 
+                                                          idToId(id), 
+                                                          tToT(t))::cont)
+                                            in
+                                              AnnAst.SFor((idToId(id),
+                                                    inferExp(newEnv,e0),
+                                                    tToT(t)), 
+                                                    inferExp(newEnv,e1),
+                                                    inferExp(newEnv,e2),
+                                                    checkStmt(newEnv,s0,ret))
+                                            end
+                                          else raise TypeError
+        (*| Ast.SBlock(sl) =>
         | Ast.SIf(e, s0) =>
         | Ast.SIfElse(e, s0, s1) =>*)
     end
