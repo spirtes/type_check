@@ -279,7 +279,7 @@ struct
 
         fun isIn (id: Ast.id) : bool = 
           (* this could be funky? should this be checking all layers of context? *)
-          case Environ.find(cont, id) of
+          case Environ.find(List.hd(cont), id) of
             NONE => true
             | SOME t => raise MultiplyDeclaredError(id)
     in
@@ -311,13 +311,15 @@ struct
                               else raise TypeError
         (* Valid is e is of type bool, and s is valid *)
         (* process: check e is bool, call checkStm s0 *)
-        | Ast.SDowhile(s0, e) => if typeBool(e) 
-                                  then AnnAst.SDoWhile(checkStmt(envi,s0,ret), 
-                                                        inferExp(envi, e))
-                                  else raise TypeError 
+        | Ast.SDoWhile(s0, e) => if typeBool(e) 
+                                  then AnnAst.SDoWhile(checkStmt(envi,s0,ret),
+                                                        inferExp(envi, e)               
+                                                        )
+                                  else raise TypeError
         | Ast.SWhile(e, s0) => if typeBool(e) 
-                                  then AnnAst.SWhile(checkStmt(envi, s0, ret), 
-                                                        inferExp(envi, e))
+                                  then AnnAst.SWhile(inferExp(envi, e),
+                                                      checkStmt(envi,s0,ret)
+                                                      )
                                   else raise TypeError
         (* Valid if x has not been declared by an initialization or decl in the current block or func, 
         e0 has type tau, e1, e2 can be any type, s is valid *)
@@ -327,7 +329,7 @@ struct
         | Ast.SFor((t,id,e0),e1,e2,s0) => if isIn(id) 
                                           then let 
                                             val newEnv = (*make it type env*)
-                                              (funcs, Environ.insert(cont, 
+                                              (funcs, Environ.insert(List.hd(cont), 
                                                           idToId(id), 
                                                           tToT(t))::cont)
                                             in
@@ -339,9 +341,18 @@ struct
                                                     checkStmt(newEnv,s0,ret))
                                             end
                                           else raise TypeError
-        (*| Ast.SBlock(sl) =>
-        | Ast.SIf(e, s0) =>
-        | Ast.SIfElse(e, s0, s1) =>*)
+        (*| Ast.SBlock(sl) =>*)
+          (*valid if e has type bool and s is valid*)
+        | Ast.SIf(e, s0) => if typeBool(e) 
+                              then AnnAst.SIf(inferExp(envi,e),
+                                              checkStmt(envi,s0,ret))
+                            else raise TypeError
+        (*valid if e has type bool and s0 and s1 valid*)
+       | Ast.SIfElse(e, s0, s1) => if typeBool(e)
+                                      then AnnAst.SIfElse(inferExp(envi,e),
+                                                          checkStmt(envi,s0,ret),
+                                                          checkStmt(envi,s1,ret))
+                                    else raise TypeError
     end
     
 

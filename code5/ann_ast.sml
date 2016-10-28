@@ -58,13 +58,16 @@ struct
                 | SIf of exp*stm 
                 | SIfElse of exp*stm*stm
                 | SBlock of stm list
-                | SDoWhile of exp*stm
+                | SDoWhile of stm*exp
 
   datatype def = DFun of id*typ*(paramdecl list)*(stm list)
                 | DProt of id*typ*(paramdecl list)
 
   
   datatype program = PDef of def list
+
+ 
+
 
   (*  typToString t = a string representation of t.
   *)
@@ -80,7 +83,12 @@ struct
   (*  You must supply a function to convert (annotated) expressions to
   *   strings for the driver program.
   *)
-  fun expToString (e : exp) : string =
+     fun expLToString (l: exp list) : string =
+    case l of
+      [] => ""
+      | x::xs => expToString(x) ^ expLToString(xs) 
+
+  and expToString (e : exp) : string =
       let
         fun binToStr(con : string, e : exp, e' : exp, t: typ) : string =
           String.concat [
@@ -98,6 +106,22 @@ struct
           "ETrue(" ^ (Bool.toString b) ^ ")"
         | EFalse(b) =>
           "EFalse(" ^ (Bool.toString b) ^ ")"
+        | EId(id, t) => "EId(" ^ String.toString id ^ "," ^ typToString(t) ^ ")"
+        | ECall((id, t), l) => 
+              "ECall((" ^ String.toString id ^ "," ^ typToString(t) ^ "), "
+              ^ expLToString(l) ^ ")"
+        | EPostDecr(id, t) => "EPostDecr(" ^ String.toString id ^ "," ^
+                              typToString(t) ^ ")"
+        | EPostIncr(id, t) => "EPostIncr(" ^ String.toString id ^ "," ^
+                              typToString(t) ^ ")"
+        | EPreDecr(id, t) => "EPreDecr(" ^ String.toString id ^ "," ^
+                              typToString(t) ^ ")"
+        | EPreIncr(id, t) => "EPreIncr(" ^ String.toString id ^ "," ^
+                              typToString(t) ^ ")"
+        | ENot(e, t) => "ENot(" ^ expToString(e) ^ "," ^ 
+                          typToString(t) ^ ")"
+        | EAsst(id,e,t) => "EAsst(" ^ String.toString id ^ "," ^ 
+                            expToString(e) ^ "," ^ typToString(t) ^ ")"
         | EAdd((e0, e1), t) => binToStr("EAdd", e0, e1, t)
         | ESub((e0, e1), t) => binToStr("ESub", e0, e1, t)
         | EMul((e0, e1), t) => binToStr("EMul", e0, e1, t)
@@ -118,6 +142,7 @@ struct
                                     expToString e1 ^ ", " ^
                                     expToString e2 ^ ", " ^ 
                                     typToString t ^ ")"
+        
       end
 
   (*  You must spply a function to convert (annotated) programs to
@@ -125,11 +150,6 @@ struct
   *)
 
   (*given an exp list l, returns it as a string*)
-  fun expLToString (l: exp list) : string =
-    case l of
-      [] => ""
-      | x::xs => expToString(x) ^ expLToString(xs) 
-
 
 
 
@@ -163,7 +183,7 @@ struct
                         initsToString(l) ^ ")"
       | SWhile(e, s) => 
           "SWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
-      | SDoWhile(e,s) =>
+      | SDoWhile(s,e) =>
            "SDoWhile(" ^ expToString(e) ^ "," ^ stmToString(s) ^ ")"
       | SFor((i, e, t), e1, e2, s) => 
           "SFor(" ^ expToString(e1) ^ "," ^ 
