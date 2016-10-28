@@ -16,8 +16,8 @@ struct
   (* sign : keys are function ids, values are type, param list (type, id) tuples *)
   (* context: list of (type, id) maps that display local environments and variables in scope *)
   (* the env is a tuple of signatures and contexts *)
-  type env = (AnnAst.typ, AnnAst.typ Environ.map) Environ.map * (AnnAst.typ Environ.map list)
-  type sign = (AnnAst.typ, AnnAst.typ Environ.map) Environ.map
+  type env = (AnnAst.typ * AnnAst.typ Environ.map) Environ.map * (AnnAst.typ Environ.map list)
+  type sign = (AnnAst.typ * AnnAst.typ Environ.map) Environ.map
   type context = AnnAst.typ Environ.map list
 
   val emptyEnv : env = (Environ.empty, [Environ.empty])
@@ -27,6 +27,10 @@ struct
   exception UndeclaredError of Ast.id
   exception MultiplyDeclaredError of Ast.id
   exception ReturnTypeError
+
+  (*change an Ast.id to an Annast.id*)
+  fun idToId(i : Ast.id) : AnnAst.id =
+    i
 
   (* determines if the expression is 
    * or is comprised of type int exps *)
@@ -107,8 +111,33 @@ struct
     then true
     else false
 
-  fun asstHelper (id: Ast.id, envi: env, e: Ast.exp) : AnnAst.exp =
-    let val (_,cont) = envi
+
+    fun funcLookup (id: Ast.id,envi: env,param: Ast.exp list,dex: int): AnnAst.id * AnnAst.typ =
+      let val (funcs, cont) = envi
+          val newL = List.length(param)
+          fun setCurrFun(id: Ast.id) : AnnAst.typ * AnnAst.typ Environ.map =
+            case Environ.find(funcs, id) of
+              NONE => raise UndeclaredError(id)
+              | SOME (currFret, fParam) => (currFret, fParam)
+          val (currFRet, fParams) = setCurrFun(id)
+          val storedL = Environ.numItems(fParams)
+          val listStored = Environ.listItemsi(fParams)
+      in
+        case newL = storedL of
+          false => raise TypeError
+          | true => case param of
+                    [] => (idToId(id), currFRet) 
+                    | x :: xs => let
+                      val (id, ty) = List.nth(listStored, dex)
+                      in
+                        case typeMatch(ty, x) of
+                          true => funcLookup(id, envi, xs, dex+1)
+                          | false => raise TypeError
+                      end
+      end
+
+      fun asstHelper (id: Ast.id, envi: env, e: Ast.exp) : AnnAst.exp =
+      let val (_,cont) = envi
         fun asstHelperHelper (id: Ast.id, cont: context) : AnnAst.typ =
               case cont of
                 [] => raise UndeclaredError(id)
@@ -120,6 +149,11 @@ struct
            if typeMatch(ty, e) then AnnAst.EAsst(id, inferExp(envi,e),ty)
           else raise TypeError
         end
+
+      and expToExp(envi: env, e : Ast.exp list) : AnnAst.exp list =
+        case e of
+          [] => []
+          | x :: xs => inferExp(envi, x)::expToExp(envi, xs)
 
   (* inferExp env e = e', where e' is the annotated expression
    * corresponding to e given an environment env. 
@@ -135,18 +169,8 @@ struct
         | Ast.ETrue => AnnAst.ETrue(true)
         | Ast.EFalse => AnnAst.EFalse(false)
         | Ast.EId(id) => idHelper(id, context)
-        (* func(hello,joe) *)
-        (* it has type t if and only if f takes exactly n params
-          * of types t_0-t_n, 
-          * comment
-          *)
-        | Ast.ECall(id, (l)) => (case Environ.find(funcs, id) of
-                                NONE => raise UndeclaredError(id)
-                                | SOME t => (*AnnAst.ECall(inferExp(id), 
-                                            (map (fn x => inferExp(x)) (l) ))
-                                            need to do some lookups or something??*)
-                                            raise TypeError
-                                )
+        | Ast.ECall(id, (l)) => AnnAst.ECall(funcLookup(id, envi, l, 0),
+                                             expToExp(envi, l))
         | Ast.EPostIncr(id) => incrHelper(id, AnnAst.EPostIncr, context)
         | Ast.EPostDecr(id) => incrHelper(id, AnnAst.EPostDecr, context)
         | Ast.ENot(n) => if typeBool(e)
@@ -251,11 +275,6 @@ struct
       | Ast.Tdouble => AnnAst.Tdouble
       | Ast.Tstring => AnnAst.Tstring
       | Ast.Tvoid => AnnAst.Tvoid
-
-
-  (*changed an Ast.id to an Annast.id*)
-  fun idToId(i : Ast.id) : AnnAst.id =
-    i
 
   (* checkStmt s = s', where s' is the annotated statement datatype
    * corresponding to s'
@@ -384,7 +403,7 @@ struct
                  ::checkParam(xs)
                 end *)
   
-  fun addFToEnv(id: Ast.id, t: Ast.typ, envi: env) : env =
+  (*fun addFToEnv(id: Ast.id, t: Ast.typ, envi: env) : env =
     let
        val (funcs, cont) = envi
      in
@@ -392,7 +411,7 @@ struct
         NONE => (Environ.insert(funcs, idToId(id), tToT(t)), cont)
         | SOME t => raise MultiplyDeclaredError(id)
 
-     end  
+     end  *)
 
 
   (*fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
