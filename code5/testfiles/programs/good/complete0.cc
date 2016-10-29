@@ -5,7 +5,7 @@ int main () {
   mx = 5000000 ;
   printInt(lo) ;
   while (hi < mx) {
-    printInt(hi) ;
+    readDouble() ;
     hi = lo + hi ;
     lo = hi - lo ;
   }

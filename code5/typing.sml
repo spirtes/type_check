@@ -35,15 +35,32 @@ struct
   fun idToId(i : Ast.id) : AnnAst.id =
     i
 
-  fun idHelperBool (id: Ast.id, cont: context) : bool =
+  fun idHelperBoolI (id: Ast.id, cont: context) : bool =
   case cont of
     [] => raise UndeclaredError(id)
     | x :: xs => (case Environ.find(x, id) of
-                    NONE => idHelperBool(id, xs)
+                    NONE => idHelperBoolI(id, xs)
                     | SOME t => if t = AnnAst.Tint 
                                 then true
                                 else false)
 
+  fun idHelperBoolD (id: Ast.id, cont: context) : bool =
+  case cont of
+    [] => raise UndeclaredError(id)
+    | x :: xs => (case Environ.find(x, id) of
+                    NONE => idHelperBoolD(id, xs)
+                    | SOME t => if t = AnnAst.Tdouble 
+                                then true
+                                else false)
+
+    fun idHelperBoolS (id: Ast.id, cont: context) : bool =
+    case cont of
+    [] => raise UndeclaredError(id)
+    | x :: xs => (case Environ.find(x, id) of
+                    NONE => idHelperBoolS(id, xs)
+                    | SOME t => if t = AnnAst.Tstring
+                                then true
+                                else false)
 
   (* determines if the expression is 
    * or is comprised of type int exps *)
@@ -59,51 +76,59 @@ struct
           | Ast.ENeq(n1,n2) | Ast.EGt(n1,n2)
           | Ast.EGe(n1,n2) | Ast.ELt(n1,n2)
           | Ast.ELe(n1,n2)) => typeInt(n1, envi) andalso typeInt(n2, envi)
-        | Ast.EId(id) => idHelperBool(id, cont)
+        | Ast.EId(id) => idHelperBoolI(id, cont)
         | _ => false
     end
 
-  fun typeDouble (e0 : Ast.exp) : bool =
-    case e0 of
-      Ast.EDouble(n) => true
-      | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
-        | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
-        | Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)
-        | Ast.EGt(n1,n2) | Ast.EGe(n1,n2)
-        | Ast.ELt(n1,n2) | Ast.ELe(n1,n2)) =>
-          typeDouble(n1) andalso typeDouble(n2)
-      | _ => false
+  fun typeDouble (e0 : Ast.exp, envi: env) : bool =
+    let val (funcs, cont) = envi
+    in
+      case e0 of
+        Ast.EDouble(n) => true
+       | (Ast.EAdd(n1,n2) | Ast.ESub(n1,n2)
+          | Ast.EMul(n1,n2) | Ast.EDiv(n1,n2)
+          | Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)
+          | Ast.EGt(n1,n2) | Ast.EGe(n1,n2)
+          | Ast.ELt(n1,n2) | Ast.ELe(n1,n2)) =>
+            typeDouble(n1, envi) andalso typeDouble(n2, envi)
+       | Ast.EId(id) => idHelperBoolD(id, cont)
+       | _ => false
+    end
 
-  fun typeString (e0 : Ast.exp) : bool =
-    case e0 of
-      Ast.EString(s) => true
-      | (Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)) =>
-        typeString(n1) andalso typeString(n2)
-      | _ => false
+    fun typeString (e0 : Ast.exp, envi: env) : bool =
+      let val (funcs, cont) = envi
+      in
+      case e0 of
+        Ast.EString(s) => true
+        | (Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)) =>
+          typeString(n1, envi) andalso typeString(n2, envi)
+        | Ast.EId(id) => idHelperBoolS(id, cont)
+        | _ => false
+      end
 
-  fun typeBool (e0 : Ast.exp, envi: env) : bool =
-    case e0 of
-      Ast.ETrue => true
-      | Ast.EFalse => true
-      | (Ast.ELt(n1,n2) | Ast.ELe(n1,n2) 
-        | Ast.EGt(n1,n2) | Ast.EGe(n1,n2)) =>
-          (typeInt(n1, envi) andalso typeInt(n2, envi)) orelse
-           (typeDouble(n1) andalso typeDouble(n2))
-      | (Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)) =>
-          (typeInt(n1, envi) andalso typeInt(n2, envi) orelse
-            (typeDouble(n1) andalso typeDouble(n2)) orelse
-            (typeString(n1) andalso typeString(n2)) orelse
-            (typeBool(n1, envi) andalso typeBool(n2, envi))
-            )
-      | (Ast.EAnd(n1,n2) | Ast.EOr(n1,n2)) =>
-          typeBool(n1, envi) andalso typeBool(n2, envi)
-      | Ast.ENot(n) => typeBool(n, envi)
-      | Ast.ECond(n1,n2,n3) => (typeBool(n1, envi)
-          andalso ((typeInt(n2, envi) andalso typeInt(n3, envi)) orelse
-                    (typeDouble(n2) andalso typeDouble(n3)) orelse
-                    (typeString(n2) andalso typeString(n3)) orelse
-                    (typeBool(n2, envi) andalso typeBool(n3, envi))) )
-      |_ => false
+    fun typeBool (e0 : Ast.exp, envi: env) : bool =
+      case e0 of
+        Ast.ETrue => true
+        | Ast.EFalse => true
+        | (Ast.ELt(n1,n2) | Ast.ELe(n1,n2) 
+          | Ast.EGt(n1,n2) | Ast.EGe(n1,n2)) =>
+            (typeInt(n1, envi) andalso typeInt(n2, envi)) orelse
+             (typeDouble(n1, envi) andalso typeDouble(n2, envi))
+        | (Ast.EEq(n1,n2) | Ast.ENeq(n1,n2)) =>
+            (typeInt(n1, envi) andalso typeInt(n2, envi) orelse
+              (typeDouble(n1, envi) andalso typeDouble(n2, envi)) orelse
+              (typeString(n1, envi) andalso typeString(n2, envi)) orelse
+              (typeBool(n1, envi) andalso typeBool(n2, envi))
+              )
+        | (Ast.EAnd(n1,n2) | Ast.EOr(n1,n2)) =>
+            typeBool(n1, envi) andalso typeBool(n2, envi)
+        | Ast.ENot(n) => typeBool(n, envi)
+        | Ast.ECond(n1,n2,n3) => (typeBool(n1, envi)
+            andalso ((typeInt(n2, envi) andalso typeInt(n3, envi)) orelse
+                      (typeDouble(n2, envi) andalso typeDouble(n3, envi)) orelse
+                      (typeString(n2, envi) andalso typeString(n3, envi)) orelse
+                      (typeBool(n2, envi) andalso typeBool(n3, envi))) )
+        |_ => false
 
   fun incrHelper (id: Ast.id, ex: AnnAst.id*AnnAst.typ -> AnnAst.exp, cont: context) : AnnAst.exp =
     case cont of
@@ -115,9 +140,9 @@ struct
    (* returns true if the expression type checks with the given type *)
   fun typeMatch (ty : AnnAst.typ, e: Ast.exp, envi: env) : bool =
     if ((typeInt(e, envi) andalso ty = AnnAst.Tint) orelse
-        (typeDouble(e) andalso ty = AnnAst.Tdouble) orelse
+        (typeDouble(e, envi) andalso ty = AnnAst.Tdouble) orelse
         (typeBool(e, envi) andalso ty = AnnAst.Tbool) orelse
-        (typeString(e) andalso ty = AnnAst.Tstring))
+        (typeString(e, envi) andalso ty = AnnAst.Tstring))
     then true
     else false
 
@@ -138,9 +163,13 @@ struct
           val (currFRet, fParams) = setCurrFun(id)
           val storedL = List.length(fParams)
       in
-        case newL = storedL of
+        (* NOTE: we have been trying to check param lengths against stored param lengths
+          * but they are different lengths depending on where they are in the function,
+          * and not their content, so we cannot figure out how to fix this issue.
+          *)
+       (* case newL = storedL of
           false => raise TypeError
-          | true => case param of
+          | true => *)case param of
                     [] => (idToId(id), currFRet) 
                     | x :: xs => let
                       val (ty) = List.nth(fParams, dex)
@@ -197,28 +226,28 @@ struct
         | Ast.EAdd(e0, e1) => if typeInt(e, envi) 
                                 then AnnAst.EAdd((inferExp(envi, e0), 
                                   inferExp(envi, e1)), AnnAst.Tint)
-                             else if typeDouble(e)
+                             else if typeDouble(e, envi)
                                 then AnnAst.EAdd((inferExp(envi, e0),
                                   inferExp(envi, e1)), AnnAst.Tdouble)
                              else raise TypeError
         | Ast.ESub(e0, e1) => if typeInt(e, envi) 
                                 then AnnAst.ESub((inferExp(envi, e0), 
                                   inferExp(envi, e1)), AnnAst.Tint)
-                             else if typeDouble(e)
+                             else if typeDouble(e, envi)
                                 then AnnAst.ESub((inferExp(envi, e0),
                                   inferExp(envi, e1)), AnnAst.Tdouble)
                              else raise TypeError
         | Ast.EMul(e0, e1) => if typeInt(e, envi) 
                                 then AnnAst.EMul((inferExp(envi, e0), 
                                   inferExp(envi, e1)), AnnAst.Tint)
-                             else if typeDouble(e)
+                             else if typeDouble(e, envi)
                                 then AnnAst.EMul((inferExp(envi, e0),
                                   inferExp(envi, e1)), AnnAst.Tdouble)
                              else raise TypeError
         | Ast.EDiv(e0, e1) => if typeInt(e, envi) 
                                 then AnnAst.EDiv((inferExp(envi, e0), 
                                   inferExp(envi, e1)), AnnAst.Tint)
-                             else if typeDouble(e)
+                             else if typeDouble(e, envi)
                                 then AnnAst.EDiv((inferExp(envi, e0),
                                   inferExp(envi, e1)), AnnAst.Tdouble)
                              else raise TypeError
@@ -343,6 +372,7 @@ struct
         (* only checking if this is in the context at top of stack. should we check all? *)
         (let val (func, conte) = envi
              val x = List.hd(conte)
+             val tail = List.tl(conte)
         in
           case idl of
             [] => envi
@@ -350,7 +380,7 @@ struct
                               NONE => let 
                                       val newEnv = ((func),Environ.insert(x, 
                                                             idToId(id), 
-                                                            tToT(t))::conte)
+                                                            tToT(t))::tail)
                                     in
                                         declCheck(t, ids, newEnv)
                                     end
@@ -382,39 +412,27 @@ struct
             [] => []
             | x :: xs => idToId(x)::idLToIdl(xs)
 
-        
+        val finalEnv = envi  
     in
       case s of
         Ast.SExp(e) => AnnAst.SExp(inferExp(envi, e))
-        (* \/ valid if none of the variables have been previously assigned a type 
-                in the current block or function*)
-        (* process: pull the current environment off the stack, see if any ids are
-          there if not you're good if they are you're bad *)
         | Ast.SDecl(t, idl) => let val newEnv = declCheck(t, idl, envi) 
-                                in (* need to USE NEWENV somehow *)
+                                in
                                     AnnAst.SDecl(tToT(t), idLToIdl(idl))
                                end
-        (* \/ valid if none of the variables have been previously assigned a type
-        in the current block or function and the type of the expression assigned to the
-        variable is the initialization type *)
-        (* process: pull current environment, see if any ids are there, if so raise error
-          otherwise keep going and make sure all e's have same type as t *)
         | Ast.SInit(t, (l)) => let val newEnv = declCheck(t, tupToSing(l), envi) 
                                 in
                                 if initCheck((l), tToT(t), newEnv) 
-                                  then AnnAst.SInit(tToT(t), 
+                                  then
+                                   AnnAst.SInit(tToT(t), 
                                             map (fn(x,y) => (idToId(x), 
                                                      inferExp(newEnv,y))) 
                                                       (l))
                                   else raise TypeError
                                 end
-        (* Valid if the type of e is the return type of the current function *)
-        (* process: pull current environment, make sure type e is same as function type*)
         | Ast.SReturn(e) => if typeMatch(tToT(ret), e, envi) 
                               then AnnAst.SRet(inferExp(envi,e))
                               else raise ReturnTypeError
-        (* Valid is e is of type bool, and s is valid *)
-        (* process: check e is bool, call checkStm s0 *)
         | Ast.SDoWhile(s0, e) => if typeBool(e, envi) 
                                   then AnnAst.SDoWhile(checkStmt(envi,s0,ret),
                                                         inferExp(envi, e)               
@@ -425,11 +443,6 @@ struct
                                                       checkStmt(envi,s0,ret)
                                                       )
                                   else raise TypeError
-        (* Valid if x has not been declared by an initialization or decl in the current block or func, 
-        e0 has type tau, e1, e2 can be any type, s is valid *)
-        (* process: look up id make sure it isn't in environment if it is multiplydclared error, if not
-         * add it to the environment, then check that e1 and e2 are valid and s0 is valid
-            *)
         | Ast.SFor((t,id,e0),e1,e2,s0) => if isIn(id) 
                                           then let 
                                             val newEnv = (*make it type env*)
@@ -445,15 +458,11 @@ struct
                                                     checkStmt(newEnv,s0,ret))
                                             end
                                           else raise TypeError
-        (*is valid if ss is valid, variable decs in ss are local to block*)
-
-        | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl, envi, ret))
-        (*valid if e has type bool and s is valid*)
+        | Ast.SBlock(sl) => AnnAst.SBlock(stmToStm(sl, finalEnv, ret))
         | Ast.SIf(e, s0) => if typeBool(e, envi) 
                               then AnnAst.SIf(inferExp(envi,e),
                                               checkStmt(envi,s0,ret))
                             else raise TypeError
-      (*valid if e has type bool and s0 and s1 valid*)
        | Ast.SIfElse(e, s0, s1) => if typeBool(e, envi)
                                       then AnnAst.SIfElse(inferExp(envi,e),
                                                           checkStmt(envi,s0,ret),
@@ -515,22 +524,6 @@ struct
         [] => []
         |(t,i)::xs => tToT(t)::paramToParamType(xs) 
 
-  (*makes params map compatible*)
-  (*fun insertParams(p: Ast.paramdecl list, envi: env) : AnnAst.typ Environ.map =
-    case p of
-      [] => envi
-      | x::xs => let
-        val (t, id) = x
-        val ((funcs, params), cont) = envi
-      in
-        case Environ.find(params, id) of
-          NONE => insertParams(p, ((funcs, 
-            Environ.insert(List.hd(params), idToId(id), tToT(t))),
-            cont))
-          | SOME t => raise MultiplyDeclaredError(id)
-      end*)
-
-
   fun addFToEnv(id: Ast.id, t: Ast.typ, p: Ast.paramdecl list, envi: env) : env =
     let
        val (funcs, cont) = envi
@@ -575,13 +568,17 @@ struct
                                     
       | _ => raise TypeError
 
+
+    fun addToList (l: AnnAst.typ list, t: AnnAst.typ) : AnnAst.typ list =
+      t::l
+
     (*functions to assist in creating base environment*)
     val envRI = Environ.insert(emptyMap, "readInt", (AnnAst.Tint, []))
     val envRB = Environ.insert(envRI, "readBool", (AnnAst.Tint, []))
     val envRD = Environ.insert(envRB, "readDouble", (AnnAst.Tint, []))
-    val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, [AnnAst.Tint]))
-    val envPB = Environ.insert(envPI, "printBool", (AnnAst.Tvoid, [AnnAst.Tint]))
-    val envPD = Environ.insert(envPB, "printDouble", (AnnAst.Tvoid, [AnnAst.Tint]))
+    val envPI = Environ.insert(envRD, "printInt", (AnnAst.Tvoid, addToList([], AnnAst.Tint)))
+    val envPB = Environ.insert(envPI, "printBool", (AnnAst.Tvoid, addToList([], AnnAst.Tint)))
+    val envPD = Environ.insert(envPB, "printDouble", (AnnAst.Tvoid, addToList([], AnnAst.Tint)))
     val baseEnv : env = (envPD, [Environ.empty])
 
   
@@ -593,15 +590,12 @@ struct
           case d of
           [] => []
           | x :: xs => 
-            (*let val d2 = checkDef(x, e)
-            in*)
               (case x of
                 Ast.DFun(t,id,(p), (s)) => checkDef(x,e)
                 ::listToList(addFToEnv(id, t, p, checkParam(p, id, e)), xs)
                 | Ast.DFunProt(t,id, (p)) => checkDef(x,e)::
                 listToList(addFProtToEnv(id,t,p,e), xs)
                 |_ => raise TypeError)
-            (*end*)
     in
     case p of
       Ast.PDefs(dl) => AnnAst.PDef(listToList(baseEnv, dl))
