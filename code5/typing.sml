@@ -584,6 +584,7 @@ struct
     val envPD = Environ.insert(envPB, "printDouble", (AnnAst.Tvoid, [AnnAst.Tint]))
     val baseEnv : env = (envPD, [Environ.empty])
 
+  
   (*  checkPgm p = p', where p' is the annotated program corresponding to p'.
   *)
   fun checkPgm (p : Ast.program) : AnnAst.program =
@@ -592,10 +593,15 @@ struct
           case d of
           [] => []
           | x :: xs => 
-            let val d2 = checkDef(x, e)
-            in
-              d2 :: listToList(e, xs)
-            end
+            (*let val d2 = checkDef(x, e)
+            in*)
+              (case x of
+                Ast.DFun(t,id,(p), (s)) => checkDef(x,e)
+                ::listToList(addFToEnv(id, t, p, checkParam(p, id, e)), xs)
+                | Ast.DFunProt(t,id, (p)) => checkDef(x,e)::
+                listToList(addFProtToEnv(id,t,p,e), xs)
+                |_ => raise TypeError)
+            (*end*)
     in
     case p of
       Ast.PDefs(dl) => AnnAst.PDef(listToList(baseEnv, dl))
