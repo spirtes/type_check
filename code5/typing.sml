@@ -292,10 +292,46 @@ struct
       | Ast.Tstring => AnnAst.Tstring
       | Ast.Tvoid => AnnAst.Tvoid
 
+
+   fun declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : env = 
+        (* only checking if this is in the context at top of stack. should we check all? *)
+        (let val (func, conte) = envi
+             val x = List.hd(conte)
+             val tail = List.tl(conte)
+        in
+          case idl of
+            [] => envi
+            | id :: ids => (case Environ.find(x, id) of
+                              NONE => let 
+                                      val newEnv = ((func),Environ.insert(x, 
+                                                            idToId(id), 
+                                                            tToT(t))::tail)
+                                    in
+                                        declCheck(t, ids, newEnv)
+                                    end
+                              | SOME t => raise MultiplyDeclaredError(id)
+                              )
+        end)
+
+    fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list = 
+          case l of
+            [] => []
+            | (id,e) :: xs => id :: tupToSing(xs)
+
   fun stmToStm (sl : Ast.stm list, envi: env, ret: Ast.typ) : AnnAst.stm list =
           case sl of
             [] => [] 
-            |x :: xs => (checkStmt(envi, x, ret))::stmToStm(xs, envi, ret)
+            |x::xs => (case x of 
+                          Ast.SDecl(t, idl) => checkStmt(envi,x,ret)::
+                          stmToStm(xs, declCheck(t, idl, envi), ret)
+                          | Ast.SInit(t, l) => checkStmt(envi,x,ret)::
+                          stmToStm(xs, declCheck(t, tupToSing(l), envi), ret)
+                          | _ => (checkStmt(envi, x, ret))::stmToStm(xs, envi, ret))
+              
+
+    
+
+
   (* checkStmt s = s', where s' is the annotated statement datatype
    * corresponding to s'
    *)

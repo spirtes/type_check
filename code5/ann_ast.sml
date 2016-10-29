@@ -3,7 +3,7 @@
 *   Torie Davids
 *   Lex Spirtes
 *
-*hello
+*
 *)
 
 structure AnnAst =
