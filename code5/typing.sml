@@ -35,6 +35,7 @@ struct
   fun idToId(i : Ast.id) : AnnAst.id =
     i
 
+  (* checks to see if a stored ID is an int *)  
   fun idHelperBoolI (id: Ast.id, cont: context) : bool =
   case cont of
     [] => raise UndeclaredError(id)
@@ -44,6 +45,7 @@ struct
                                 then true
                                 else false)
 
+  (* checks to see if a stored ID is a double *)
   fun idHelperBoolD (id: Ast.id, cont: context) : bool =
   case cont of
     [] => raise UndeclaredError(id)
@@ -53,12 +55,23 @@ struct
                                 then true
                                 else false)
 
+    (* checks to see if a stored ID is a string *)
     fun idHelperBoolS (id: Ast.id, cont: context) : bool =
     case cont of
     [] => raise UndeclaredError(id)
     | x :: xs => (case Environ.find(x, id) of
                     NONE => idHelperBoolS(id, xs)
                     | SOME t => if t = AnnAst.Tstring
+                                then true
+                                else false)
+
+    (* checks to see if a stored ID is a bool *)
+    fun idHelperBoolB (id: Ast.id, cont: context) : bool =
+    case cont of
+    [] => raise UndeclaredError(id)
+    | x :: xs => (case Environ.find(x, id) of
+                    NONE => idHelperBoolB(id, xs)
+                    | SOME t => if t = AnnAst.Tbool
                                 then true
                                 else false)
 
@@ -80,6 +93,8 @@ struct
         | _ => false
     end
 
+  (* determines if the expression is or
+   * is comprised of type double exps *)
   fun typeDouble (e0 : Ast.exp, envi: env) : bool =
     let val (funcs, cont) = envi
     in
@@ -95,6 +110,8 @@ struct
        | _ => false
     end
 
+    (* determines if the expression is or
+   * is comprised of type string exps *)
     fun typeString (e0 : Ast.exp, envi: env) : bool =
       let val (funcs, cont) = envi
       in
@@ -106,7 +123,11 @@ struct
         | _ => false
       end
 
+    (* determines if the expression is or
+   * is comprised of type bool exps *)
     fun typeBool (e0 : Ast.exp, envi: env) : bool =
+      let val (func, cont) = envi
+      in
       case e0 of
         Ast.ETrue => true
         | Ast.EFalse => true
@@ -128,8 +149,11 @@ struct
                       (typeDouble(n2, envi) andalso typeDouble(n3, envi)) orelse
                       (typeString(n2, envi) andalso typeString(n3, envi)) orelse
                       (typeBool(n2, envi) andalso typeBool(n3, envi))) )
+        | Ast.EId(id) => idHelperBoolB(id, cont)
         |_ => false
+      end
 
+  (* checks for id presence in the increment operators *)
   fun incrHelper (id: Ast.id, ex: AnnAst.id*AnnAst.typ -> AnnAst.exp, cont: context) : AnnAst.exp =
     case cont of
       [] => raise UndeclaredError(id)
@@ -146,6 +170,7 @@ struct
     then true
     else false
 
+    (* checks for presence of an id in the environment *)
    fun idHelper (id: Ast.id, cont: context) : AnnAst.exp =
   case cont of
     [] => raise UndeclaredError(id)
@@ -153,6 +178,7 @@ struct
                     NONE => idHelper(id, xs)
                     | SOME t => AnnAst.EId(id, t))
 
+    (* checks if a function is in the environment and if the params are valid*)
     fun funcLookup (id: Ast.id,envi: env,param: Ast.exp list,dex: int): AnnAst.id * AnnAst.typ =
       let val (funcs, cont) = envi
           val newL = List.length(param)
@@ -181,6 +207,9 @@ struct
                       end)
       end
 
+      (* checks if an id in an assignment operation is declared and 
+        * creates the AnnAst.exp if it is
+        *)
       fun asstHelper (id: Ast.id, envi: env, e: Ast.exp) : AnnAst.exp =
       let val (_,cont) = envi
         fun asstHelperHelper (id: Ast.id, cont: context) : AnnAst.typ =
@@ -195,6 +224,7 @@ struct
           else raise TypeError
         end
 
+      (* changes an Ast.exp list to an AnnAst.exp list using inferExp*)
       and expToExp(envi: env, e : Ast.exp list) : AnnAst.exp list =
         case e of
           [] => []
