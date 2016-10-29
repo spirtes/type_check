@@ -162,6 +162,7 @@ struct
               | SOME (currFret, fParam) => (currFret, fParam)
           val (currFRet, fParams) = setCurrFun(id)
           val storedL = List.length(fParams)
+
       in
         (* NOTE: we have been trying to check param lengths against stored param lengths
           * but they are different lengths depending on where they are in the function,
@@ -169,7 +170,7 @@ struct
           *)
        (* case newL = storedL of
           false => raise TypeError
-          | true => *)case param of
+          | true => *)(case param of
                     [] => (idToId(id), currFRet) 
                     | x :: xs => let
                       val (ty) = List.nth(fParams, dex)
@@ -177,7 +178,7 @@ struct
                         case typeMatch(ty, x, envi) of
                           true => funcLookup(id, envi, xs, dex+1)
                           | false => raise TypeError
-                      end
+                      end)
       end
 
       fun asstHelper (id: Ast.id, envi: env, e: Ast.exp) : AnnAst.exp =
@@ -313,6 +314,7 @@ struct
   fun inferExpNoEnv (e : Ast.exp) : AnnAst.exp =
     inferExp(emptyEnv, e)
 
+  (*given an ast.typ changes to annast.typ*)
   fun tToT(t : Ast.typ) : AnnAst.typ =
     case t of
       Ast.Tbool => AnnAst.Tbool
@@ -321,7 +323,7 @@ struct
       | Ast.Tstring => AnnAst.Tstring
       | Ast.Tvoid => AnnAst.Tvoid
 
-
+  (*checks the variable declarations and adds to env when need be *)
    fun declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : env = 
         (* only checking if this is in the context at top of stack. should we check all? *)
         (let val (func, conte) = envi
@@ -342,11 +344,15 @@ struct
                               )
         end)
 
+    (*given a id*exp list returns a list of just the ids*)
     fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list = 
           case l of
             [] => []
             | (id,e) :: xs => id :: tupToSing(xs)
 
+  (*given an Ast stm list, an environment, and a return type
+    changes to AnnAst stm and updates the environment for variable
+      declarations and initializations*)
   fun stmToStm (sl : Ast.stm list, envi: env, ret: Ast.typ) : AnnAst.stm list =
           case sl of
             [] => [] 
@@ -368,45 +374,22 @@ struct
     let
       val (funcs, cont) = envi
 
-      fun declCheck(t: Ast.typ, idl: Ast.id list, envi: env) : env = 
-        (* only checking if this is in the context at top of stack. should we check all? *)
-        (let val (func, conte) = envi
-             val x = List.hd(conte)
-             val tail = List.tl(conte)
-        in
-          case idl of
-            [] => envi
-            | id :: ids => (case Environ.find(x, id) of
-                              NONE => let 
-                                      val newEnv = ((func),Environ.insert(x, 
-                                                            idToId(id), 
-                                                            tToT(t))::tail)
-                                    in
-                                        declCheck(t, ids, newEnv)
-                                    end
-                              | SOME t => raise MultiplyDeclaredError(id)
-                              )
-        end)
-
-        fun tupToSing(l : (Ast.id*Ast.exp) list) : Ast.id list = 
-          case l of
-            [] => []
-            | (id,e) :: xs => id :: tupToSing(xs)
-
+    (*checks if any variable initializations have been previously declared*)
         fun initCheck(idel: (Ast.id*Ast.exp) list, t: AnnAst.typ, envi: env) : bool =
-          case idel of
+           case idel of
             [] => true
             | (id,ex) :: xs => case typeMatch(t, ex, envi) of 
-                                true => initCheck(xs, t, envi)
-                                | false => raise TypeError
+                            true => initCheck(xs, t, envi)
+                            | false => raise TypeError
 
-
+        (*check to see if an id is in an environment 
+          returns true if it isn't and false otherwise*)
         fun isIn (id : Ast.id) : bool = 
-          (* this could be funky? should this be checking all layers of context? *)
           case Environ.find(List.hd(cont), id) of
             NONE => true
             | SOME t => raise MultiplyDeclaredError(id)
 
+        (*changes an Ast.id list to an AnnAst.id list*)
         fun idLToIdl(idl : Ast.id list) : AnnAst.id list =
           case idl of
             [] => []
@@ -469,7 +452,9 @@ struct
                                                           checkStmt(envi,s1,ret))
                                     else raise TypeError
     end
-    
+  
+  (*checks to see if paramters are valid and adds them to 
+  current context if they are*)  
   fun checkParam (p: Ast.paramdecl list, f: Ast.id, envi: env) : env  =
             let
             val (funcs,cont) = envi
@@ -524,6 +509,7 @@ struct
         [] => []
         |(t,i)::xs => tToT(t)::paramToParamType(xs) 
 
+  (*adds Function declarations to environment or raises error if previously defined*)
   fun addFToEnv(id: Ast.id, t: Ast.typ, p: Ast.paramdecl list, envi: env) : env =
     let
        val (funcs, cont) = envi
@@ -536,6 +522,9 @@ struct
 
      end 
 
+  (*Checks to see if Function prototypes are already declared, if so 
+    raises MultiplyDeclared Error, if not returns 
+    newEnv with FPrototype in it*)
   fun addFProtToEnv(id: Ast.id, t: Ast.typ, p: Ast.prototype list, envi: env) : env =
     let
        val (funcs, cont) = envi
@@ -548,7 +537,7 @@ struct
 
      end 
 
-
+  (*checks if function definitions and prototypes are valid*)
   fun checkDef (d : Ast.def, envi: env) : AnnAst.def = 
     case d of
       Ast.DFun(t,id, (p),(s)) => let
@@ -560,15 +549,10 @@ struct
                                     paramToParam(p), stmToStm(s, newEnv, t))
                                   end
               
-      | Ast.DFunProt(t, id, (p)) => let (* need to use newEnv somehow *)
-                                      val newEnv = addFProtToEnv(id,t, p, envi)
-                                        in
-                                      AnnAst.DProt(tToT(t), id, protoToParamType(p))
-                                   end 
-                                    
+      | Ast.DFunProt(t, id, (p)) => AnnAst.DProt(tToT(t), id, protoToParamType(p))                                                          
       | _ => raise TypeError
 
-
+    (*given an AnnAst.typ list and a type t adds t to list l*)
     fun addToList (l: AnnAst.typ list, t: AnnAst.typ) : AnnAst.typ list =
       t::l
 
@@ -593,8 +577,8 @@ struct
               (case x of
                 Ast.DFun(t,id,(p), (s)) => checkDef(x,e)
                 ::listToList(addFToEnv(id, t, p, checkParam(p, id, e)), xs)
-                | Ast.DFunProt(t,id, (p)) => checkDef(x,e)::
-                listToList(addFProtToEnv(id,t,p,e), xs)
+                | Ast.DFunProt(t,id, (p)) => checkDef(x,e)
+                ::listToList(addFProtToEnv(id,t,p,e), xs)
                 |_ => raise TypeError)
     in
     case p of
